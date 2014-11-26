@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<source_library title="source library">
+<source Energy_Flux100="4.2539141417e-05" Energy_Flux1000="1.68194440888e-05" Flux100="1.20538270215e-07" Flux1000="5.41816023078e-09" Flux_Density="1.64874120435e-11" Npred="3504.48478234" Pivot_Energy="706.387289876" Spectral_Index="-2.34566115684" Spectral_Index_PowerLaw="2.34566115684" TSCurve="11.834550935" TS_value="523.711293712" Unc_Energy_Flux100="2.3014489427e-06" Unc_Energy_Flux1000="1.69326663349e-06" Unc_Flux100="8.79700807047e-09" Unc_Flux1000="3.76540061901e-10" Unc_Flux_Density="8.78023993124e-13" Unc_Spectral_Index="0.0414327956442" name="2FGL J1604.5-4442" type="PointSource">
+    <spectrum normPar="Integral" type="PowerLaw2">
+      <parameter error="0.08796655543" free="1" max="1000" min="1e-05" name="Integral" scale="1e-07" value="1.201555359"/>
+      <parameter error="0.04143279564" free="1" max="-0" min="-5" name="Index" scale="1" value="-2.345661157"/>
+      <parameter free="0" max="300000" min="20" name="LowerLimit" scale="1" value="100"/>
+      <parameter free="0" max="300000" min="20" name="UpperLimit" scale="1" value="100000"/>
+    </spectrum>
+    <spatialModel type="SkyDirFunction">
+      <parameter free="0" max="360" min="-360" name="RA" scale="1" value="241.1414642"/>
+      <parameter free="0" max="90" min="-90" name="DEC" scale="1" value="-44.71598053"/>
+    </spatialModel>
+  </source>
+
+</source_library>
+    
