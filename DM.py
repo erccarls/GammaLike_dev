@@ -95,10 +95,12 @@ def LOS_DM(l_max, b_max, res, z_step=0.02, func1='func = lambda x,y,z: 1.', func
     # Write func to a file so it is importable by child threads
     f = open('tmp.py', 'wb')
     f.write(func1)
+    f.flush()
     f.close()
 
     f = open('tmp2.py', 'wb')
     f.write(func2)
+    f.flush()
     f.close()
     time.sleep(0.05)
     n_threads = mp.cpu_count()
