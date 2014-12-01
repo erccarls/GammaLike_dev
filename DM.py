@@ -152,16 +152,28 @@ def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation
 
     '''
 
+    #TODO: Make rotation and offset for the actual profile.
+
     # -------------------------------------------------
     # Define Dark matter Profiles
     func = '''
 import numpy as np
 gamma=''' + str(gamma) + '''
 r_s=''' + str(r_s) + '''
+#offset=''' + str(offset) + '''
+#rotation=''' + str(rotation) + '''
+#axesratio=''' + str(axesratio) + '''
+
+#sinAng = np.sin(np.deg2rad(rotation))
+#cosAng = np.cos(np.deg2rad(rotation))
     '''
 
     NFW = '''
 def func(x,y,z):
+    #x = X
+    #y = ((Y-offset[0])*cosAng+(Z-offset[1])*sinAng) / axesratio
+    #z = -(Y-offset[0])*sinAng+(Z-offset[1])*cosAng
+
     r=np.sqrt(x*x+y*y+z*z)
     return r**-gamma*(1/(1+r/r_s)**(3-gamma))
     '''
