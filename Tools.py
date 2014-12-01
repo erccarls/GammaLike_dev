@@ -127,7 +127,7 @@ def ApplyGaussianPSF(hpix, E_min, E_max, psfFile):
     FWHM = np.deg2rad(2*theta[halfmax])
     
     # Spherical Harmonic transform 
-    alm  = healpy.sphtfunc.map2alm(hpix)
+    alm = healpy.sphtfunc.map2alm(hpix)
     # inverse transform with gaussian beam
     return healpy.sphtfunc.alm2map(alm, nside=healpy.get_nside(hpix), fwhm=FWHM, verbose=False)
 
@@ -158,7 +158,7 @@ def GetExpMap(E_min, E_max, l, b, expcube='/data/fermi_data_1-8-14/gtexpcube2_AL
     if E_min == E_max:
         average_E = E_min
     else:
-        average_E = (1-alpha)/(alpha-2)  *  (E_min**(2-alpha)-E_max**(2-alpha))  /  (E_min**(1-alpha)-E_max**(1-alpha))
+        average_E = (1-alpha)/(alpha-2)*(E_min**(2-alpha)-E_max**(2-alpha))/(E_min**(1-alpha)-E_max**(1-alpha))
 
     # Find the energy bin in the expcube file
     Ebin = int(np.round((np.log(average_E)-hdu[0].header['CRVAL3'])/hdu[0].header['CDELT3']))
@@ -178,11 +178,13 @@ def GetExpMap(E_min, E_max, l, b, expcube='/data/fermi_data_1-8-14/gtexpcube2_AL
     l_bin = np.round((l-hdu[0].header['CRVAL1'])/hdu[0].header['CDELT1']+hdu[0].header['CRPIX1']).astype(np.int32)
     b_bin = np.round((b-hdu[0].header['CRVAL2'])/hdu[0].header['CDELT2']+hdu[0].header['CRPIX2']).astype(np.int32)
     # Return the exposure map in cm*s
-    return hdu[0].data[Ebin,b_bin,l_bin]
+    return hdu[0].data[Ebin, b_bin, l_bin]
+
 
 def GetSpectralIndex(E_min, E_max):
     """
-    Returns the spectal index between evaluated at the two endpoints E_min and E_max based on the averaged P7REPv15 diffuse model
+    Returns the spectal index between evaluated at the two endpoints E_min and E_max based on the
+    averaged P7REPv15 diffuse model
     params:
         E_min: Min energy in MeV
         E_max: Max energy in MeV
@@ -204,9 +206,9 @@ def GetSpectralIndex(E_min, E_max):
     # Find bin and check bounds 
     E_bin_min, E_bin_max = int(np.argmin(np.abs(E-E_min))),  int(np.argmin(np.abs(E-E_max)))
     if E_bin_min == E_bin_max:
-        E_bin_max=E_bin_min+1
+        E_bin_max = E_bin_min+1
     if E_bin_max >= len(dnde):
-        E_bin_min, E_bin_max= len(dnde)-3, len(dnde)-1
+        E_bin_min, E_bin_max = len(dnde)-3, len(dnde)-1
 
     return -np.log(dnde[E_bin_min]/dnde[E_bin_max])/np.log(E[E_bin_min]/E[E_bin_max])
 
@@ -226,7 +228,7 @@ def CartesianCountMap2Healpix(cartCube, nside):
     # open the fits
     hdu = pyfits.open(cartCube)
     # initialize the target array
-    hpix = np.zeros(shape=(hdu[0].data.shape[0],12*nside**2))
+    hpix = np.zeros(shape=(hdu[0].data.shape[0], 12*nside**2))
     
     def Getlatlon(i, j):
         l = (i-hdu[0].header['CRPIX1']+1)*hdu[0].header['CDELT1']+hdu[0].header['CRVAL1']
@@ -236,12 +238,12 @@ def CartesianCountMap2Healpix(cartCube, nside):
     # iterate over latitudes
     i_list = np.arange(hdu[0].data.shape[2]) # list of longitude bins 
     for j in range(hdu[0].data.shape[1]):
-        l,b = Getlatlon(i_list,j)
+        l, b = Getlatlon(i_list, j)
         # convert l,b to healpix index
-        hpixIndex = ang2hpix(l,b,nside)
+        hpixIndex = ang2hpix(l, b, nside)
         # iterate over energy bins, summing the contibution from each pixel.
         for i_E in range(hpix.shape[0]):
-            hpix[i_E,hpixIndex]+=hdu[0].data[i_E,j]
+            hpix[i_E, hpixIndex] += hdu[0].data[i_E, j]
     return hpix
 
 
