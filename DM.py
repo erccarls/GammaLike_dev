@@ -9,8 +9,8 @@ import multiprocessing as mp
 from functools import partial
 import time
 import pyfits
-#from scipy import ndimage
-#from scipy.interpolate import RegularGridInterpolator
+# from scipy import ndimage
+# from scipy.interpolate import RegularGridInterpolator
 import Tools
 import healpy
 
