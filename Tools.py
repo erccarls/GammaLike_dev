@@ -7,16 +7,20 @@
 import numpy as np 
 import pyfits
 import healpy
+from scipy.integrate import quad
+from scipy.special import expn
 
-def hpix2ang(hpix,nside=256):
-    '''Transform the healpix index into lat/lon'''
+
+def hpix2ang(hpix, nside=256):
+    """Transform the healpix index into lat/lon"""
     b, l = np.rad2deg(healpy.pix2ang(nside, hpix))
     b = 90-b
     return l, b
 
-def ang2hpix(l,b,nside=256):
-    '''Transform lat/lon into healpix index'''
-    l,b = np.deg2rad(l),np.deg2rad(-b+90)
+
+def ang2hpix(l, b, nside=256):
+    """Transform lat/lon into healpix index"""
+    l, b = np.deg2rad(l), np.deg2rad(-b+90)
 
     l = np.array(l)
     if l.ndim == 0: 
@@ -27,16 +31,42 @@ def ang2hpix(l,b,nside=256):
     
     return healpy.ang2pix(nside,b,l,nest=False)
 
+
+def GetSpec(specType):
+    """
+    Given a 2FGL Spectral type return lambdas for the spectrum and integrated spectrum
+    params:
+        specType: Can be 'PowerLaw','PLExpCutoff', or 'LogParabola'
+    returns:
+        Spec,IntegratedSpec: the spectrum and integrated spectrum.  See function def for param ordering.
+    """
+    if specType == 'PowerLaw':
+        Spec = lambda e,gamma: e**-gamma
+        IntegratedSpec = lambda e1,e2,gamma: (e1*e2)**-gamma * (e1*e2**gamma - e1**gamma*e2)/ (gamma-1)
+
+    elif specType == 'PLExpCutoff':
+        Spec = lambda e,gamma,cutoff: e**-gamma * np.exp(-e/cutoff)
+        IntegratedSpec = lambda e1,e2,gamma,cutoff: e1**(1-gamma)*expn(gamma,e1/cutoff)-e2**(1-gamma)*expn(gamma,e2/cutoff)
+
+    elif specType == 'LogParabola':
+        Spec = lambda e, alpha, beta, pivot: e**-(alpha+beta*np.log(e/pivot))
+        IntegratedSpec = lambda e1,e2,alpha,beta,pivot: quad(Spec,e1,e2,args=(alpha,beta,pivot))[0]
+    else:
+        raise Exception("Spectral type not supported.")
+
+    return Spec, IntegratedSpec
+
+
 #--------------------------------------------------------------------------
 # Here we generate models and convolve them with 
 # instrumental response functions. 
 #--------------------------------------------------------------------------
-def GetPSF(E_min,E_max,psfFile='/data/fermi_data_1-8-14/psf_P7REP_SOURCE_BOTH.fits'):
-    '''
+def GetPSF(E_min, E_max, psfFile='/data/fermi_data_1-8-14/psf_P7REP_SOURCE_BOTH.fits'):
+    """
     #---------------------------------------------------------------------------------------------
     # Spectrally weight the PSF(E) and return the average.
     #---------------------------------------------------------------------------------------------
-    '''
+    """
     hdu = pyfits.open(psfFile)
     
     thetas   = np.array([theta[0] for theta in hdu[2].data])

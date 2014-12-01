@@ -7,39 +7,40 @@
 from iminuit import Minuit
 import tempfile
 import numpy as np
-import copy 
 from scipy.optimize import *
-import time,imp 
+import time
+import imp
+
 
 def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30):
     '''
-    Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py). 
+    Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py).
     params:
         analysis: An Analysis object with valid binned_data and at least one template in templateList.
-        print_level: Verbosity for the fitting 0=quiet, 1=full output. 
+        print_level: Verbosity for the fitting 0=quiet, 1=full output.
         use_basinhopping: Slower, but more accurate use of scipy basinhopping algorithm after migrad convergence
-        start_fresh: If use_basinhopping==True, then start_fresh==True does not run migrad before basinhopping. 
-        niter_success: Setting for basinhopping algorithm.  See scipy docs. 
-    return: 
-        returns (m, res): 
+        start_fresh: If use_basinhopping==True, then start_fresh==True does not run migrad before basinhopping.
+        niter_success: Setting for basinhopping algorithm.  See scipy docs.
+    return:
+        returns (m, res):
             m: iminuit result object
             res: scipy.minimize result.  None if use_basinhopping==False
 
     '''
-    
-    if analysis.binned_data == None:
+
+    if analysis.binned_data is None:
         raise Exception("No binned photon data.")
 
-    # Check that the input data all has the correct dimensionality.    
+    # Check that the input data all has the correct dimensionality.
     shape = analysis.binned_data.shape
     for key in analysis.templateList:
         if analysis.templateList[key].healpixCube.shape != shape:
             raise Exception("Input template " + key + " does not match the shape of the binned data.")
 
     #---------------------------------------------------------------------------
-    # Select only unmasked pixels.  Less expensive to do here rather than later. 
+    # Select only unmasked pixels.  Less expensive to do here rather than later.
     start = time.time()
-    mask_idx = np.where(analysis.mask!=0)[0]
+    mask_idx = np.where(analysis.mask != 0)[0]
     # Iterate through templates and apply masking
     for key in analysis.templateList:
         t = analysis.templateList[key]
@@ -47,15 +48,15 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
         for Ebin in range(t.healpixCube.shape[0]):
             tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx]
         t.healpixCubeMasked = tmpcube
-    
+
     # mask the data as well.
     masked_data = analysis.binned_data[:, mask_idx].astype(np.float32)
-    if mask_idx.shape[0]<10: 
+    if mask_idx.shape[0] < 10:
         raise Exception('Masked number of pixels <10. Has mask been initialized?')
 
-    if print_level>0: 
+    if print_level > 0:
         print "Masking completed in", "{:10.4e}".format(time.time()-start), 's'
-    
+
     #---------------------------------------------------------------------------
     # We first enumerate all of the fit parameters and add them to the args and 
     # model strings.  These strings will then be used to generate the likelihood 
@@ -74,7 +75,7 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
             for Ebin in range(t.healpixCube.shape[0]):
                 model[Ebin] += key + "*self.templateList['"+key+"'].healpixCubeMasked["+str(Ebin)+"]+"
             # Set initial value and limits 
-            kwargs[key] = t.value # default initial value
+            kwargs[key] = t.value  # default initial value
             kwargs['limit_'+key] = t.limits
             kwargs['error_'+key] = .25
             kwargs['fix_'+key] = t.fixNorm
@@ -84,9 +85,9 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
             for Ebin in range(t.healpixCube.shape[0]):
                 args += key + '_' + str(Ebin)+','
                 model[Ebin] += key + '_' + str(Ebin) + "*self.templateList['"+key+"'].healpixCubeMasked["+str(Ebin)+"]+"
-                kwargs['error_'+ key + '_' + str(Ebin)]=.25  # Initial step size
+                kwargs['error_' + key + '_' + str(Ebin)] = .25  # Initial step size
                 # If we have an array or list of initial values....
-                if type(t.value)==type([]) or type(t.value) == type(np.array([])):
+                if type(t.value) == type([]) or type(t.value) == type(np.array([])):
                     kwargs[key + '_' + str(Ebin)] = t.value[Ebin]  # default initial value
                 else:
                     kwargs[key + '_' + str(Ebin)] = t.value  # default initial value
