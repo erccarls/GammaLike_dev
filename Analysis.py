@@ -7,7 +7,10 @@ import numpy as np
 import healpy
 import pyfits
 import DM
-import Tools, Template
+import Tools
+import Template
+import GenFermiData
+import SourceMap
 
 class Analysis():
     #--------------------------------------------------------------------
@@ -15,9 +18,9 @@ class Analysis():
     #--------------------------------------------------------------------
 
     def __init__(self, E_min=5e2, E_max=5e5, nside=256, gamma=1.45, n_bins=20, prefix_bins=[300,350,400,450,500],
-                    phfile  = '/data/fermi_data_1-8-14/photon/lat_ph_merged_ALL_BOTH_2.fits',
-                    psfFile = '/data/fermi_data_1-8-14/psf_P7REP_SOURCE_BOTH.fits',
-                    expcube = '/data/fermi_data_1-8-14/gtexpcube2_ALL_BOTH'):
+                    tag='P7REP_CLEAN_V15_test', basepath='/data/GCE_sys/', phfile_raw='/data/fermi_data_1-8-14/phfile.txt',
+                    scfile='/data/fermi_data_1-8-14/lat_spacecraft_merged.fits',
+                    evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v08.fit'):
         """
         params:
             E_min:       # Min energy for recursive spectral binning
@@ -26,20 +29,36 @@ class Analysis():
             gamma:       # Power-law index for recursive binning 
             nside:       # Number of healpix spatial bins
             prefix_bins: # manually specified low energy bin edges
-         -- Fermitools Input -- 
-            phfile:      # Photon file from fermitools
-            psfFile:     # Output of gtpsf from fermitools
-            expcube:     # Output of gtexpcube2 from fermitools
+            tag:         # an analysis tag that is included in generated files
+            basepath:    # the base directory for relative paths
+            phfile_raw:  # Photon file or list of files from fermitools (evfile you would input to gtselect)
+            scfile:      # Merged spacecraft file
+            evclass:     # Fermi event class (integer)
+            convType:    # Fermi conversion type (integer)
+            zmax:        # zenith cut
+            irf:         # Fermi irf name
+            fglpath:     # Path to the 2FGL fits file
         """
+
         self.E_min = E_min
         self.E_max = E_max
         self.nside = nside
         self.gamma = gamma
         self.n_bins = n_bins
-        self.phfile = phfile
-        self.psfFile = psfFile
+        self.phfile_raw = phfile_raw
+        self.tag = tag
+        self.basepath = basepath
+        self.scfile = scfile
+        self.evclass = evclass
+        self.convtype = convtype
+        self.zmax = zmax
+        self.irf = irf
         self.bin_edges = prefix_bins
-        self.expcube = expcube
+
+        self.phfile = basepath + '/photons_merged_cut_'+str(tag)+'.fits'
+        self.psfFile = basepath + '/gtpsf_' + str(tag)+'.fits'
+        self.expCube = basepath + '/gtexpcube2_' + str(tag)+'.fits'
+        self.fglpath = fglpath
         
         # Currently Unassigned 
         self.binned_data = None  # master list of bin counts. 1st index is spectral, 2nd is pixel_number
@@ -134,7 +153,7 @@ class Analysis():
         return hpix
 
 
-    def AddPointSourceTemplate(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
+    def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
                                 fixSpectrum=False, fixNorm=False, limits=[0, 1e2], value=1,):
         """
         Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted to a healpix template.
@@ -153,6 +172,52 @@ class Analysis():
 
         self.AddTemplate(name, hpix, fixSpectrum, fixNorm, limits, value, ApplyIRF=False, sourceClass='PSC')
 
+
+    def AddPointSourceTemplate(self, pscmap=None, name='PSC', fixNorm=False,
+                               limits=[0, 1e2], value=1):
+        """
+        Adds a point source map to the list of templates.
+        params:
+            pscmap: Filename of the pscmap.  If none, assumes default value.
+            name:   Name to use for this template.
+            fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
+            limits:      Specify range of template normalizations.
+            value:       Initial value for the template normalization.
+        """
+        if pscmap is None:
+            pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
+        try:
+            hpix = np.load(open(pscmap, 'r'))
+        except:
+            raise Exception('No point source map found at path '+str(pscmap))
+
+
+        self.AddTemplate(name, hpix, fixSpectrum=True, fixNorm=fixNorm, limits=limits, value=value,
+                         ApplyIRF=False, sourceClass='PSC')
+
+
+    def GenPointSourceTemplate(self, pscmap=None):
+        """
+        Generates a point source count map valid for the current analysis based on 2fgl catalog.  This can take a long
+        time so it is usually done once and then saved.
+        :param pscmap: Specify the point source map filename.  If None, then the default path
+            basemap+'PSC_'+tag+ '.npy' is used.
+        :return:
+        """
+        if pscmap is None:
+            pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
+
+        reload(SourceMap)
+        total_map = SourceMap.GenSourceMap(self.bin_edges, l_range=(-180, 180), b_range=(-90, 90),
+                 fglpath=self.fglpath,
+                 expcube=self.expCube,
+                 psffile=self.psfFile,
+                 maxpsf = 5.,
+                 res=0.125,
+                 nside=self.nside,
+                 filename=pscmap)
+
+        return total_map
 
 
     def PrintTemplates(self):
@@ -241,31 +306,45 @@ class Analysis():
         :return:
         """
 
-        # Generate the DM template.  This gives units in J-fact
+        # Generate the DM template.  This gives units in J-fact so we divide by something reasonable for the fit.
+        # Say the max value.
         tmp = DM.GenNFW(nside=self.nside, profile=profile, decay=decay, gamma=gamma, axesratio=axesratio, rotation=0.,
-               offset=offset, r_s=r_s, mult_solid_ang=True)/self.dm_renorm
-
+                        offset=offset, r_s=r_s, mult_solid_ang=True)/self.dm_renorm
 
         healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
 
         if spectrum is None:
             for i in range(self.n_bins):
                 healpixcube[i] = tmp
-            self.AddTemplate(name='DM', healpixcube, fixSpectrum=False, fixNorm=False, limits=[0,1e5],
+            self.AddTemplate(name='DM', healpixcube=healpixcube, fixSpectrum=False, fixNorm=False, limits=[0,1e5],
                              value=1, ApplyIRF=True, sourceClass='GEN')
         else:
             for i in range(self.n_bins):
                 healpixcube[i] = tmp
-            self.AddTemplate(name='DM', healpixcube, fixSpectrum=True, fixNorm=False, limits=[0,1e5],
+            self.AddTemplate(name='DM', healpixcube=healpixcube, fixSpectrum=True, fixNorm=False, limits=[0,1e5],
                              value=1, ApplyIRF=True, sourceClass='GEN')
 
-    #def GenFermiData[]
+    def GenFermiData(self, scriptname):
+        """
+        Given the analysis properties, this will generate a script for the fermi data.
+        :param scriptname: file location for the script to run relative to the basepath.
+        :return:
+        """
+        print "Run this script to generate the required fermitools files for this analysis."
+        print "The script can be found at",
+
+        scriptname = self.basepath + '/' +  scriptname
+
+        print GenFermiData.GenDataScipt(self.tag, self.basepath, self.bin_edges, scriptname, self.phfile_raw,
+                                        self.scfile, self.evclass, self.convtype,  self.zmax, self.E_min, self.E_max,
+                                        self.irf)
+
+
 
     # TODO: Add interfaces to SampleCartesian Method
     # TODO: ADD INTERFACES TO GALPROP MAPS
-    # TODO: ADD INTERFACES TO GEN FERMI DATA
     # TODO: ADD interfaces to GenPointSources
-    # TODO:
+
 
 
 
