@@ -122,35 +122,32 @@ def LOS_DM(l_max, b_max, res, z_step=0.02, func1='func = lambda x,y,z: 1.', func
 
 def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation=0., offset=(0, 0), res=.125, size=50.,
            fitsout=None, r_s=20., mult_solid_ang=False):
-    '''
+    """
     Generates a dark matter annihilation or decay skymap combined with instrumental and point source maps.
 
-    params:
-        nside: healpix nside.
-        profile: 'NFW', 'Ein', or 'Bur'
-        decay: If false, skymap is for annihilating dark matter
-        gamma: Inner slope of DM profile for NFW.  Shape parameter for Einasto. Unused for Burk
-        r_s: Scale factor
-        axesratio: Stretch the *projected* dark matter profile along the +y axis
-        rotation: *NOT SUPPORTED* In degrees, the CCW rotation of the DM profile.
-        offset: offsets from (glon,glat)=(0,0) in degrees
-        res: width in degrees of interpolation.  Should be ~0.5*size of healpix radius or less.
-        size: max dist in degrees from the GC before all values zero.
-        fitsout: write fits file to this path
-        mult_solid_ang: Mutiply pixels by there solid angle.
-    returns:
-        ndarray: A mask of DM convolved with XMM-Newton observations and point source maskes.
-                 Normalization is:
-                    Integral_l.o.s. [ pho ] dz
-                    Integral_l.o.s. [ pho^2 ] dz
-                 rho_0=0.4 GeV cm^-3 at R=8.5 kpc assumed.
-                 Units at this point are GeV cm^-2 sr^-1. or (ann) GeV^2 cm^5 sr^-1
-                 Finally, we multiply each pixel by it's area in sr.
-                 **NOT multiplied by Effective area**
+    :param nside: healpix nside.
+    :param profile: 'NFW', 'Ein', or 'Bur'
+    :param decay: If false, skymap is for annihilating dark matter
+    :param gamma: Inner slope of DM profile for NFW.  Shape parameter for Einasto. Unused for Burk
+    :param r_s: Scale factor
+    :param axesratio: Stretch the *projected* dark matter profile along the +y axis
+    :param rotation: *NOT SUPPORTED* In degrees, the CCW rotation of the DM profile.
+    :param offset: offsets from (glon,glat)=(0,0) in degrees
+    :param res: width in degrees of interpolation.  Should be ~0.5*size of healpix radius or less.
+    :param size: max dist in degrees from the GC before all values zero.
+    :param fitsout: write fits file to this path
+    :param mult_solid_ang: Mutiply pixels by there solid angle.
+    :returns ndarray: A mask of DM convolved with XMM-Newton observations and point source maskes.\n
+             Normalization is:\n
+                Integral_l.o.s. [ pho ] dz\n
+                Integral_l.o.s. [ pho^2 ] dz\n
+             rho_0=0.4 GeV cm^-3 at R=8.5 kpc assumed.
+             Units at this point are GeV cm^-2 sr^-1. or (ann) GeV^2 cm^5 sr^-1
+             Finally, we multiply each pixel by it's area in sr.
+            **This is not multiplied by Effective area**
 
-                 Thus return units are GeV cm^-2 for decay or or GeV^2 cm^-5 for annihilations
-
-    '''
+             Thus return units are GeV cm^-2 for decay or or GeV^2 cm^-5 for annihilations
+    """
 
     #TODO: Make rotation and offset for the actual profile.
 
