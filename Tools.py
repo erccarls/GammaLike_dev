@@ -13,14 +13,27 @@ from scipy.interpolate import RegularGridInterpolator
 
 
 def hpix2ang(hpix, nside=256):
-    """Transform the healpix index into lat/lon"""
+    """
+    Transform the healpix index into lat/lon
+
+    :param hpix: healpix index
+    :param nside: healpix nside parameter
+    :returns l,b: latitude and longitude of the input.
+    """
     b, l = np.rad2deg(healpy.pix2ang(nside, hpix))
     b = 90-b
     return l, b
 
 
 def ang2hpix(l, b, nside=256):
-    """Transform lat/lon into healpix index"""
+    """
+    Transform lat/lon into healpix index.
+
+    :param l: longitudes
+    :param b: latitudes.
+    :param nside: healpix nside parameter.
+    :return hpix index: the healpix index corresponining to the input angular coordinates.
+    """
     l, b = np.deg2rad(l), np.deg2rad(-b+90)
 
     l = np.array(l)
@@ -37,10 +50,9 @@ def ang2hpix(l, b, nside=256):
 def GetSpec(specType):
     """
     Given a 2FGL Spectral type return lambdas for the spectrum and integrated spectrum
-    params:
-        specType: Can be 'PowerLaw','PLExpCutoff', or 'LogParabola'
-    returns:
-        Spec,IntegratedSpec: the spectrum and integrated spectrum.  See function def for param ordering.
+
+    :param specType: Can be 'PowerLaw','PLExpCutoff', or 'LogParabola'
+    :returns Spec,IntegratedSpec: the spectrum and integrated spectrum.  See function def for param ordering.
     """
     if specType == 'PowerLaw':
         Spec = lambda e, gamma: e**-gamma
@@ -66,9 +78,14 @@ def GetSpec(specType):
 #--------------------------------------------------------------------------
 def GetPSF(E_min, E_max, psfFile='/data/fermi_data_1-8-14/psf_P7REP_SOURCE_BOTH.fits'):
     """
-    #---------------------------------------------------------------------------------------------
-    # Spectrally weight the PSF(E) and return the average.
-    #---------------------------------------------------------------------------------------------
+    Spectrally weight the PSF(E) and return the average.  The spectrum is taken to be the global average of the P7
+    galdiffuse model.  In practice, the energy bins should be narrow enough that this is sufficient.
+
+    :param E_min: Minimum energy to integrate
+    :param E_max: Maximum energy to integrate
+    :param psfFile: absolute path to an output file from gtpsf.
+    :returns thetas, avgPSF: thetas is the angular distance in degrees. avgPSF is the spectrally averaged point-spread
+    and has the same units as gtpsf output.
     """
     hdu = pyfits.open(psfFile)
     
@@ -88,7 +105,10 @@ def GetPSF(E_min, E_max, psfFile='/data/fermi_data_1-8-14/psf_P7REP_SOURCE_BOTH.
 def ApplyPSF(hpix, E_min, E_max, PSFFile='P7Clean_Front+Back.fits', sigma=.1, smoothed=False):
     """
     WARNING INCOMPLETE: Normalization off and smoothing below healpix scale explodes. 
-    This method takes a healpix input 'hpix', and a spectrally averaged energy 'E'. It then looks up the corresponding PSF from tables -> calculates the legendre transform coefficients -> transforms the input pixles into spherical harmonics -> re-weight the alm coefficients according to the PSF -> returns the inverse transform
+    This method takes a healpix input 'hpix', and a spectrally averaged energy 'E'. It then looks up the corresponding
+    PSF from tables -> calculates the legendre transform coefficients -> transforms the input pixles into spherical
+    harmonics -> re-weight the alm coefficients according to the PSF -> returns the inverse transform
+    **WARNING: DO NOT USE. THIS METHOD IS NOT YET COMPLETED**
     """
 
     # Spherical Harmonic transform 
@@ -115,10 +135,13 @@ def ApplyPSF(hpix, E_min, E_max, PSFFile='P7Clean_Front+Back.fits', sigma=.1, sm
 def ApplyGaussianPSF(hpix, E_min, E_max, psfFile):
     """
     Finds the spectral weighted average PSF, determines the FWHM and blurs by Gaussian kernel of that size.
-        hpix: input healpix map
-        E_min: Minimum energy for spectral weighting
-        E_max: Max energy for spectral weighting
-        psfFile: Output of gtpsf 
+
+    :param hpix: input healpix map
+    :param E_min: Minimum energy for spectral weighting
+    :param E_max: Max energy for spectral weighting
+    :param psfFile: Output of gtpsf
+
+    :return hpix array: returns the input hpix with PSF convolved.
     """
     theta, psf = GetPSF(E_min, E_max, psfFile)
     
@@ -137,16 +160,13 @@ currentExpCube, expcubehdu = None, None  # keeps track of the current gtexpcube2
 def GetExpMap(E_min, E_max, l, b, expcube):
     """
     Returns the effective area given the energy range and angular coordinates.
-    params:     
-        E_min: Min energy in MeV
-        E_max: Max Energy in MeV
-        l: Galactic longitude.
-        b: Galactic latitude.
-        expcube: Exposure cube file over observation from Fermitools gtexpcube2.
 
-    returns:
-        value of the exposure in cm^2*s 
-        "
+    :param    E_min: Min energy in MeV
+    :param    E_max: Max Energy in MeV
+    :param    l: Galactic longitude.
+    :param    b: Galactic latitude.
+    :param    expcube: Exposure cube file over observation from Fermitools gtexpcube2.
+    :return Effective Exposure: value of the effective exposure in cm^2*s at the given coordinates.
     """
     # check if the expCube has already been opened.
     global currentExpCube, expcubehdu
@@ -201,11 +221,10 @@ def GetSpectralIndex(E_min, E_max):
     """
     Returns the spectal index between evaluated at the two endpoints E_min and E_max based on the
     averaged P7REPv15 diffuse model
-    params:
-        E_min: Min energy in MeV
-        E_max: Max energy in MeV
-    returns:
-        index: Spectral index (positive value).
+
+    :param E_min: Min energy in MeV
+    :param E_max: Max energy in MeV
+    :return spectral index: The power law index averaged over the given energy (positive value).
     """
     E = np.array([58.473133087158203, 79.970359802246108, 109.37088726489363, 149.58030713742139, 204.57243095354417,
                   279.7820134691566, 382.64185792772452, 523.31738421248383, 715.71125569520109, 978.83734991844688,
@@ -235,11 +254,10 @@ def CartesianCountMap2Healpix(cartCube, nside):
     It simply maps each cartesian pixel to the healpix grid (individually for each spectral bin). 
     Primarily intended for converting gtsrcmaps output into healpix format.
     params: 
-        input:
-            cartCube: Fits filename containing the source cartesian countmap
-            nside: healpix nside
-        return: 
-            hpixcube: First index corresponds to the energies in cartCube, second dimension is the healpix grid. 
+
+    :param cartCube: Fits filename containing the source cartesian countmap
+    :param nside: healpix nside
+    :return hpixcube: First index corresponds to the energies in cartCube, second dimension is the healpix grid.
     """
     # open the fits
     hdu = pyfits.open(cartCube)
@@ -266,15 +284,15 @@ def CartesianCountMap2Healpix(cartCube, nside):
 def SampleCartesianMap(fits, E_min, E_max, nside, E_bins=5):
     """
     Given a cartesian fits mapcube and energy range, returns a spectrally weighted average diffuse model
-    in units of (s cm^2)^-1.  Just need to multiply by effective area and PSF in order to
-    params:
-        fits: fits filename.  Assumed to run from -180, 180 and -90,-90 and have energy keywords like fermi diffuse model
-        E_min: Min energy in MeV
-        E_max: Max energy in MeV
-        nside: healpix nside
-        E_bins: Number of subbins for integration.
-    returns:
-        Healpix pixels with units in (s cm^2)^-1
+    in units of (s cm^2)^-1.  Just need to multiply by effective area and PSF in order to obtain count map.
+
+    :param    fits: fits filename.  Assumed to run from -180, 180 and -90,-90 and have energy keywords like
+                    fermi diffuse model
+    :param    E_min: Min energy in MeV
+    :param    E_max: Max energy in MeV
+    :param    nside: healpix nside
+    :param    E_bins: Number of subbins for integration.
+    :returns: Healpix sampling of the input cartesian data cube with units in (s cm^2)^-1
     """
     hdu = pyfits.open(fits)
 

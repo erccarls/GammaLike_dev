@@ -13,20 +13,19 @@ import imp
 
 
 def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30):
-    '''
+    """
     Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py).
-    params:
-        analysis: An Analysis object with valid binned_data and at least one template in templateList.
-        print_level: Verbosity for the fitting 0=quiet, 1=full output.
-        use_basinhopping: Slower, but more accurate use of scipy basinhopping algorithm after migrad convergence
-        start_fresh: If use_basinhopping==True, then start_fresh==True does not run migrad before basinhopping.
-        niter_success: Setting for basinhopping algorithm.  See scipy docs.
-    return:
-        returns (m, res):
-            m: iminuit result object
+
+    :param analysis: An Analysis object with valid binned_data and at least one template in templateList.
+    :param print_level: Verbosity for the fitting 0=quiet, 1=full output.
+    :param use_basinhopping: Slower, but more accurate use of scipy basinhopping algorithm after migrad convergence
+    :param start_fresh: If use_basinhopping==True, then start_fresh==True does not run migrad before basinhopping.
+    :param niter_success: Setting for basinhopping algorithm.  See scipy docs.
+    :returns (m, res):
+            m: iminuit result object\n
             res: scipy.minimize result.  None if use_basinhopping==False
 
-    '''
+    """
 
     if analysis.binned_data is None:
         raise Exception("No binned photon data.")

@@ -22,22 +22,21 @@ class Analysis():
                     scfile='/data/fermi_data_1-8-14/lat_spacecraft_merged.fits',
                     evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v08.fit'):
         """
-        params:
-            E_min:       # Min energy for recursive spectral binning
-            E_max:       # Max energt for recursive spectral binning
-            n_bins:      # Number of recursive spectal bins
-            gamma:       # Power-law index for recursive binning 
-            nside:       # Number of healpix spatial bins
-            prefix_bins: # manually specified low energy bin edges
-            tag:         # an analysis tag that is included in generated files
-            basepath:    # the base directory for relative paths
-            phfile_raw:  # Photon file or list of files from fermitools (evfile you would input to gtselect)
-            scfile:      # Merged spacecraft file
-            evclass:     # Fermi event class (integer)
-            convType:    # Fermi conversion type (integer)
-            zmax:        # zenith cut
-            irf:         # Fermi irf name
-            fglpath:     # Path to the 2FGL fits file
+        :param    E_min:        Min energy for recursive spectral binning
+        :param    E_max:        Max energt for recursive spectral binning
+        :param    n_bins:       Number of recursive spectal bins
+        :param    gamma:        Power-law index for recursive binning
+        :param    nside:        Number of healpix spatial bins
+        :param    prefix_bins:  manually specified low energy bin edges
+        :param    tag:          an analysis tag that is included in generated files
+        :param    basepath:     the base directory for relative paths
+        :param    phfile_raw:   Photon file or list of files from fermitools (evfile you would input to gtselect)
+        :param    scfile:       Merged spacecraft file
+        :param    evclass:      Fermi event class (integer)
+        :param    convType:     Fermi conversion type (integer)
+        :param    zmax:         zenith cut
+        :param    irf:          Fermi irf name
+        :param    fglpath:      Path to the 2FGL fits file
         """
 
         self.E_min = E_min
@@ -104,13 +103,12 @@ class Analysis():
     def GenSquareMask(self, l_range, b_range, plane_mask=0, merge=False):
         """
         Generate a square analysis mask (square in glat/glon)
-        params: 
-            l_range: range for min/max galactic longitude
-            b_range: range for min/max galactic latitude
-            plane_mask: Masks out |b|<plane_mask
-            merge: False will replace the current Analysis.mask.  In case one wants to combine multiple masks, merge=True will apply the or operation between the exisiting and new mask
-        returns:
-            mask healpix array of dimension nside: 
+
+        :param    l_range: range for min/max galactic longitude
+        :param    b_range: range for min/max galactic latitude
+        :param    plane_mask: Masks out |b|<plane_mask
+        :param    merge: False will replace the current Analysis.mask.  In case one wants to combine multiple masks, merge=True will apply the or operation between the exisiting and new mask
+        :returns  mask: mask healpix array of dimension nside:
         """
         b_min, b_max = b_range
         l_min, l_max = l_range
@@ -136,11 +134,11 @@ class Analysis():
         Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
         These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
         diffuse model.
-        params:
-            hpix: A healpix array. 
-            E_min: low energy boundary
-            E_max: high energy boundary
-            noPSF: Do not apply the PSF (Exposure only)
+
+        :param    hpix: A healpix array.
+        :param    E_min: low energy boundary
+        :param    E_max: high energy boundary
+        :param    noPSF: Do not apply the PSF (Exposure only)
         """
         # Apply the PSF.  This is automatically spectrally weighted
         if noPSF is False:
@@ -156,14 +154,16 @@ class Analysis():
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
                                 fixSpectrum=False, fixNorm=False, limits=[0, 1e2], value=1,):
         """
-        Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted to a healpix template.
-        params:
-            pscmap: The point source map should be the output from gtsrcmaps in cartesian coordinates. 
-            name:   Name to use for this template.
-            fixSpectrum: If True, the relative normalizations of each energy bin will be held fixed for this template, but the overall normalization is free
-            fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
-            limits:      Specify range of template normalizations.
-            value:       Initial value for the template normalization. 
+        Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted
+        to a healpix template.
+
+        :param    pscmap: The point source map should be the output from gtsrcmaps in cartesian coordinates.
+        :param    name:   Name to use for this template.
+        :param    fixSpectrum: If True, the relative normalizations of each energy bin will be held fixed for this
+                    template, but the overall normalization is free
+        :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
+        :param    limits:      Specify range of template normalizations.
+        :param    value:       Initial value for the template normalization.
         """
         # Convert the input map into healpix.
         hpix = Tools.CartesianCountMap2Healpix(cartCube=pscmap, nside=self.nside)[:-1]/1e9
@@ -177,12 +177,12 @@ class Analysis():
                                limits=[0, 1e2], value=1):
         """
         Adds a point source map to the list of templates.
-        params:
-            pscmap: Filename of the pscmap.  If none, assumes default value.
-            name:   Name to use for this template.
-            fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
-            limits:      Specify range of template normalizations.
-            value:       Initial value for the template normalization.
+
+        :param    pscmap: Filename of the pscmap.  If none, assumes default value.
+        :param    name:   Name to use for this template.
+        :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
+        :param    limits:      Specify range of template normalizations.
+        :param    value:       Initial value for the template normalization.
         """
         if pscmap is None:
             pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
@@ -200,9 +200,10 @@ class Analysis():
         """
         Generates a point source count map valid for the current analysis based on 2fgl catalog.  This can take a long
         time so it is usually done once and then saved.
+
         :param pscmap: Specify the point source map filename.  If None, then the default path
-            basemap+'PSC_'+tag+ '.npy' is used.
-        :return:
+            self.basemap+'PSC_'+self.tag+'.npy' is used.
+        :return PSCMap:  The healpix 'cube' for the point sources.
         """
         if pscmap is None:
             pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
@@ -233,13 +234,13 @@ class Analysis():
     def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0,1e5], value=1, ApplyIRF=True, sourceClass='GEN'):
         """
         Add Template to the template list.
-        params:
-            name:   Name to use for this template.
-            healpixCube: Actually a 2-d array with first index selecting energy and second index selecting the healpix index
-            fixSpectrum: If True, the relative normalizations of each energy bin will be held fixed for this template, but the overall normalization is free
-            fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
-            limits:      Specify range of template normalizations.
-            value:       Initial value for the template normalization.
+
+        :param    name:   Name to use for this template.
+        :param    healpixCube: Actually a 2-d array with first index selecting energy and second index selecting the healpix index
+        :param    fixSpectrum: If True, the relative normalizations of each energy bin will be held fixed for this template, but the overall normalization is free
+        :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
+        :param    limits:      Specify range of template normalizations.
+        :param    value:       Initial value for the template normalization.
         """
         # Error Checking on shape of input cube. 
         if (healpixCube.shape[0] != (len(self.bin_edges)-1)) or (healpixCube.shape[1]!=12*self.nside**2):
@@ -260,14 +261,16 @@ class Analysis():
     def RemoveTemplate(self, name):
         """
         Removes a template from the template list.
-        params:
-            name: Name of template to remove.
+
+        :param    name: Name of template to remove.
         """
         self.templateList.pop(name)
 
     def AddIsotropicTemplate(self, isofile='iso_clean_v05.txt'):
         """
-        Generates an isotropic template from a spectral file.  The file should be the same format as the isotropic files
+        Generates an isotropic template from a spectral file and add it to the current templateList
+
+        :param isofile:  The file should be the same format as the isotropic files
          from fermi (3 columns with E,flux,fluxUnc.)
         """
         # Load isotropic emission file
@@ -295,6 +298,8 @@ class Analysis():
 
     def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20., spectrum=None):
         """
+        Generates a dark matter template and adds it to the current template stack.
+
         :param profile: 'NFW', 'Ein', or 'Bur'
         :param decay: If false, skymap is for annihilating dark matter
         :param gamma: Inner slope of DM profile for NFW.  Shape parameter for Einasto. Unused for Burk
@@ -303,8 +308,10 @@ class Analysis():
         :param r_s: Scale factor
         :param spectrum: Input vector for normalizations the DM spectrum should be fixed (needs to be
                 pre-integrated over bins).
-        :return:
+        :return: A healpix 'cube'. 2-dimensions: 1st is energy second is healpix pixel.  If spectrum is not supplied
+                this is redundent.
         """
+        # TODO: Allow spectrum input to be filename and read in a file to (E, dNdE) ASCII file to integrate.
 
         # Generate the DM template.  This gives units in J-fact so we divide by something reasonable for the fit.
         # Say the max value.
@@ -323,17 +330,21 @@ class Analysis():
                 healpixcube[i] = tmp
             self.AddTemplate(name='DM', healpixcube=healpixcube, fixSpectrum=True, fixNorm=False, limits=[0,1e5],
                              value=1, ApplyIRF=True, sourceClass='GEN')
+        return tmp
+
 
     def GenFermiData(self, scriptname):
         """
         Given the analysis properties, this will generate a script for the fermi data.
-        :param scriptname: file location for the script to run relative to the basepath.
-        :return:
+
+        :param scriptname: file location for the output script relative to the basepath.
+
         """
-        print "Run this script to generate the required fermitools files for this analysis."
-        print "The script can be found at",
 
         scriptname = self.basepath + '/' +  scriptname
+
+        print "Run this script to generate the required fermitools files for this analysis."
+        print "The script can be found at", scriptname
 
         print GenFermiData.GenDataScipt(self.tag, self.basepath, self.bin_edges, scriptname, self.phfile_raw,
                                         self.scfile, self.evclass, self.convtype,  self.zmax, self.E_min, self.E_max,
