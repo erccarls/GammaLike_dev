@@ -17,17 +17,18 @@ class Analysis():
     # Most binning settings follows Calore et al 2014 (1409.0042)
     #--------------------------------------------------------------------
 
-    def __init__(self, E_min=5e2, E_max=5e5, nside=256, gamma=1.45, n_bins=20, prefix_bins=[300,350,400,450,500],
-                    tag='P7REP_CLEAN_V15_test', basepath='/data/GCE_sys/', phfile_raw='/data/fermi_data_1-8-14/phfile.txt',
+    def __init__(self, E_min=5e2, E_max=5e5, nside=256, gamma=1.45, n_bins=20, prefix_bins=[300, 350, 400, 450, 500],
+                    tag='P7REP_CLEAN_V15_test', basepath='/data/GCE_sys/',
+                    phfile_raw='/data/fermi_data_1-8-14/phfile.txt',
                     scfile='/data/fermi_data_1-8-14/lat_spacecraft_merged.fits',
                     evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v08.fit'):
         """
         :param    E_min:        Min energy for recursive spectral binning
         :param    E_max:        Max energt for recursive spectral binning
-        :param    n_bins:       Number of recursive spectal bins
+        :param    n_bins:       Number of recursive spectal bins. Specify zero if custom bins are supplied.
         :param    gamma:        Power-law index for recursive binning
         :param    nside:        Number of healpix spatial bins
-        :param    prefix_bins:  manually specified low energy bin edges
+        :param    prefix_bins:  manually specify bin edges. These are prepended to the recursive bins
         :param    tag:          an analysis tag that is included in generated files
         :param    basepath:     the base directory for relative paths
         :param    phfile_raw:   Photon file or list of files from fermitools (evfile you would input to gtselect)
@@ -71,12 +72,15 @@ class Analysis():
         Ej = self.E_min
         for j in range(self.n_bins):
             # Eqn 2.3 (1409.0042)
-            Ej = (Ej**(1-self.gamma) - (self.E_min**(1-self.gamma)-self.E_max**(1-self.gamma))/self.n_bins)**(1/(1-self.gamma))
+            Ej = ((Ej**(1-self.gamma) - (self.E_min**(1-self.gamma)
+                                         - self.E_max**(1-self.gamma))/self.n_bins)**(1/(1-self.gamma)))
             self.bin_edges += [Ej, ]
+        # Add the prefix bins to the total bincount.
+        self.n_bins += len(prefix_bins)
 
     def BinPhotons(self):
         """
-        Spatially and Spectrally Bin the Photons
+        Spatially and spatially bin the Photons in self.phfile
         """
         
         # Load Fermi Data
@@ -107,7 +111,8 @@ class Analysis():
         :param    l_range: range for min/max galactic longitude
         :param    b_range: range for min/max galactic latitude
         :param    plane_mask: Masks out |b|<plane_mask
-        :param    merge: False will replace the current Analysis.mask.  In case one wants to combine multiple masks, merge=True will apply the or operation between the exisiting and new mask
+        :param    merge: False will replace the current Analysis.mask.  In case one wants to combine multiple masks,
+                    merge=True will apply the or operation between the exisiting and new mask
         :returns  mask: mask healpix array of dimension nside:
         """
         b_min, b_max = b_range
@@ -144,15 +149,14 @@ class Analysis():
         if noPSF is False:
             hpix = Tools.ApplyGaussianPSF(hpix, E_min, E_max, self.psfFile) 
         # Get l,b for each healpix pixel 
-        l,b  = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
+        l,b = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
         # For each healpix pixel, multiply by the exposure. 
         hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expcube)
 
         return hpix
 
-
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
-                                fixSpectrum=False, fixNorm=False, limits=[0, 1e2], value=1,):
+                                    fixSpectrum=False, fixNorm=False, limits=[0, 1e2], value=1,):
         """
         Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted
         to a healpix template.
@@ -210,34 +214,37 @@ class Analysis():
 
         reload(SourceMap)
         total_map = SourceMap.GenSourceMap(self.bin_edges, l_range=(-180, 180), b_range=(-90, 90),
-                 fglpath=self.fglpath,
-                 expcube=self.expCube,
-                 psffile=self.psfFile,
-                 maxpsf = 5.,
-                 res=0.125,
-                 nside=self.nside,
-                 filename=pscmap)
+                                           fglpath=self.fglpath,
+                                           expcube=self.expCube,
+                                           psffile=self.psfFile,
+                                           maxpsf = 5.,
+                                           res=0.125,
+                                           nside=self.nside,
+                                           filename=pscmap)
 
         return total_map
-
 
     def PrintTemplates(self):
         """
         Prints the names and properties of each template in the template list.
         """
-        print '%20s' % 'NAME', '%25s' % 'LIMITS', '%10s' % 'VALUE', '%10s' % 'FIXNORM', '%10s' % 'FIXSPEC', '%10s' % 'SRCCLASS'
+        print ('%20s' % 'NAME', '%25s' % 'LIMITS', '%10s' % 'VALUE', '%10s' % 'FIXNORM', '%10s' % 'FIXSPEC',
+               '%10s' % 'SRCCLASS')
         for key in self.templateList:
             temp = self.templateList[key]
-            print '%20s' % key, '%25s' % temp.limits, '%10s' % temp.value, '%10s' % temp.fixNorm, '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass
+            print ('%20s' % key, '%25s' % temp.limits, '%10s' % temp.value, '%10s' % temp.fixNorm,
+                   '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass)
 
-
-    def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0,1e5], value=1, ApplyIRF=True, sourceClass='GEN'):
+    def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0,1e5], value=1, ApplyIRF=True,
+                    sourceClass='GEN'):
         """
         Add Template to the template list.
 
         :param    name:   Name to use for this template.
-        :param    healpixCube: Actually a 2-d array with first index selecting energy and second index selecting the healpix index
-        :param    fixSpectrum: If True, the relative normalizations of each energy bin will be held fixed for this template, but the overall normalization is free
+        :param    healpixCube: Actually a 2-d array with first index selecting energy and second index selecting the
+                    healpix index
+        :param    fixSpectrum: If True, the relative normalizations of each energy bin will be held fixed for this
+                    template, but the overall normalization is free
         :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
         :param    limits:      Specify range of template normalizations.
         :param    value:       Initial value for the template normalization.
@@ -249,7 +256,8 @@ class Analysis():
         if ApplyIRF:
             for i_E in range(len(self.bin_edges)-1):
                 if sourceClass == 'ISO':
-                    healpixCube[i_E] = self.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],noPSF=True)
+                    healpixCube[i_E] = self.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
+                                                     noPSF=True)
                 else:
                     healpixCube[i_E] = self.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1])
 
@@ -350,11 +358,25 @@ class Analysis():
                                         self.scfile, self.evclass, self.convtype,  self.zmax, self.E_min, self.E_max,
                                         self.irf)
 
+    def AddFermiDiffuseModel(self, diffuse_path):
+        """
+        Adds a fermi diffuse model to the template.  Input map is a fits file containing a cartesian mapcube.
+        This gets resampled into a healpix cube, integrated over energy,
+         applies PSF & effective exposure, and gets added to the templateList.
+        :param diffuse_path: path to the diffuse model.
+        :return: None
+        """
+
+        healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
+
+        # For each energy bin, sample and interpolate the map, then
+        for i in range(self.n_bins):
+            # SampleCartesianMap takes care of sub-binning.
+            Tools.SampleCartesianMap(fits=diffuse_path, E_min=self.bin_edges[i], self.bin_edges[i+1], self.nside)
+        self.AddTemplate(fixSpectrum=True, fixNorm=False, value=1, ApplyIRF=True, sourceClass='GEN')
 
 
-    # TODO: Add interfaces to SampleCartesian Method
     # TODO: ADD INTERFACES TO GALPROP MAPS
-    # TODO: ADD interfaces to GenPointSources
 
 
 
