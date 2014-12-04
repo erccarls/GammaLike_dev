@@ -315,7 +315,6 @@ def SampleCartesianMap(fits, E_min, E_max, nside, E_bins=5):
     # Iterate over the sub-bins to return the integrated spectrum.
     for i_E in range(len(bin_edges)-1):
         central_energy = 10.**(0.5*(np.log10(bin_edges[i_E]) + np.log10(bin_edges[i_E+1])))
-        print central_energy
         bin_width = bin_edges[i_E+1]-bin_edges[i_E]
         # Units of diffuse model are (sr s cm^2 MeV)^-1
         master += rgi((np.log10(central_energy), b, l))*bin_width
