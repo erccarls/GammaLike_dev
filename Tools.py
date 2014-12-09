@@ -56,15 +56,14 @@ def GetSpec(specType):
     """
     if specType == 'PowerLaw':
         Spec = lambda e, gamma: e**-gamma
-        IntegratedSpec = lambda e1, e2, gamma: (e1*e2)**-gamma * (e1*e2**gamma - e1**gamma*e2)/ (gamma-1)
+        IntegratedSpec = lambda e1, e2, gamma: (e1*e2)**-gamma * (e1*e2**gamma - e1**gamma*e2)/(gamma-1)
 
     elif specType == 'PLExpCutoff':
         Spec = lambda e, gamma, cutoff: e**-gamma * np.exp(-e/cutoff)
         IntegratedSpec = lambda e1, e2, gamma, cutoff: (e1**(1-gamma)*expn(gamma, e1/cutoff)
                                                         -e2**(1-gamma)*expn(gamma, e2/cutoff))
-
     elif specType == 'LogParabola':
-        Spec = lambda e, alpha, beta, pivot: e**-(alpha+beta*np.log(e/pivot))
+        Spec = lambda e, alpha, beta, pivot: (e/pivot)**-(alpha+beta*np.log(e/pivot))
         IntegratedSpec = lambda e1, e2, alpha, beta, pivot: quad(Spec, e1, e2, args=(alpha, beta, pivot))[0]
     else:
         raise Exception("Spectral type not supported.")
@@ -300,7 +299,6 @@ def SampleCartesianMap(fits, E_min, E_max, nside, E_bins=5):
     energies = np.log10([e[0] for e in hdu[1].data])
     lats = np.linspace(-90, 90, hdu[0].header['NAXIS2'])
     lons = np.linspace(-180, 180, hdu[0].header['NAXIS1'])
-    print 10**energies
     # Build the interpolator
     rgi = RegularGridInterpolator((energies, lats, lons), hdu[0].data, method='linear',
                                   bounds_error=False, fill_value=np.float32(0.))
@@ -321,6 +319,24 @@ def SampleCartesianMap(fits, E_min, E_max, nside, E_bins=5):
 
     # Units of returned model are (s cm^2)^-1
     return master*healpy.pixelfunc.nside2pixarea(nside)
+
+
+def galprop2numpy(fits):
+    """
+    Converts the galprop healpix fits output (which is in table form) into a numpy array.
+
+    :param fits: fits filename to read in.
+    :returns energies, healpixcube: energies is an array with energies in MeV. healpixcube
+            The first dimension is energy and the second is healpix index. 
+    """
+    hdulist = pyfits.open(fits)
+    dat = hdulist[1].data
+    hdr = hdulist[1].header
+    energies = np.array([hdr['EMIN']*np.exp(hdr['DELTAE']*i) for i in range(len(hdulist[1].data[0]))])
+    healpixcube = np.zeros(shape=(len(dat[0]), len(dat)))
+    for i in range(len(dat[0])):
+        healpixcube[i] = dat.field(i)
+    return energies, healpixcube
 
 #----------------------------------------------------------------------------
 # Testing for ApplyPSF

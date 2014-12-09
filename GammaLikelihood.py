@@ -174,12 +174,13 @@ class like():
 
     # Init migrad 
     m = Minuit(like.f, **kwargs)
-    m.tol = 1e2
-    m.migrad(ncall=200000, precision=1e-17)
+    m.tol = 1000000 # TODO: why does m.tol need to be so big to converge when errors are very small????
+    #m.migrad(ncall=200000, precision=1e-15)
+    m.migrad(ncall=200000)
 
     #m.minos(maxcall=10000,sigma=2.)
 
-    if print_level>0: 
+    if print_level > 0:
         print "Likelihood fit completed in", "{:10.4e}".format(time.time()-start), 's'
 
     #for key in m.values:

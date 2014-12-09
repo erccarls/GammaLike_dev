@@ -11,6 +11,8 @@ import Tools
 import Template
 import GenFermiData
 import SourceMap
+import GammaLikelihood
+import copy
 
 class Analysis():
     #--------------------------------------------------------------------
@@ -34,7 +36,7 @@ class Analysis():
         :param    phfile_raw:   Photon file or list of files from fermitools (evfile you would input to gtselect)
         :param    scfile:       Merged spacecraft file
         :param    evclass:      Fermi event class (integer)
-        :param    convType:     Fermi conversion type (integer)
+        :param    convtype:     Fermi conversion type (integer)
         :param    zmax:         zenith cut
         :param    irf:          Fermi irf name
         :param    fglpath:      Path to the 2FGL fits file
@@ -53,7 +55,8 @@ class Analysis():
         self.convtype = convtype
         self.zmax = zmax
         self.irf = irf
-        self.bin_edges = prefix_bins
+        self.bin_edges = 0
+        self.bin_edges = copy.copy(prefix_bins)
 
         self.phfile = basepath + '/photons_merged_cut_'+str(tag)+'.fits'
         self.psfFile = basepath + '/gtpsf_' + str(tag)+'.fits'
@@ -67,6 +70,7 @@ class Analysis():
 
         self.dm_renorm = 1e19  # renormalization constant for DM template
 
+        prefix_n_bins = len(prefix_bins)-1
         # --------------------------------------------------------------------
         # Recursively generate bin edges
         Ej = self.E_min
@@ -76,32 +80,36 @@ class Analysis():
                                          - self.E_max**(1-self.gamma))/self.n_bins)**(1/(1-self.gamma)))
             self.bin_edges += [Ej, ]
         # Add the prefix bins to the total bincount.
-        self.n_bins += len(prefix_bins)
+        self.n_bins += prefix_n_bins
 
-    def BinPhotons(self):
+    def BinPhotons(self, infile=None, outfile=None):
         """
         Spatially and spatially bin the Photons in self.phfile
         """
-        
-        # Load Fermi Data
-        data = pyfits.open(self.phfile)[1].data
+        if infile is None:
+            # Load Fermi Data
+            data = pyfits.open(self.phfile)[1].data
 
-        # --------------------------------------------------------------------
-        # Perform Spectral binning
-        bin_idx = [] # indices of the photons in each spectral bin.
-        for i in range(len(self.bin_edges)-1):
-            bin_low, bin_high = self.bin_edges[i], self.bin_edges[i+1]
-            idx = np.where( (data['ENERGY']>bin_low) & (data['ENERGY']<bin_high) )[0]
-            bin_idx.append(idx)
+            # --------------------------------------------------------------------
+            # Perform Spectral binning
+            bin_idx = []  # indices of the photons in each spectral bin.
+            for i in range(len(self.bin_edges)-1):
+                bin_low, bin_high = self.bin_edges[i], self.bin_edges[i+1]
+                idx = np.where((data['ENERGY'] > bin_low) & (data['ENERGY'] < bin_high))[0]
+                bin_idx.append(idx)
 
-        # Now for each spectral bin, form the list of healpix pixels.
-        self.binned_data = np.zeros(shape=(len(bin_idx), 12*self.nside**2)) 
-        for i in range(self.binned_data.shape[0]):
-            # Convert sky coords to healpix pixel number 
-            idx = bin_idx[i]
-            pix = Tools.ang2hpix(data['L'][idx], data['B'][idx], nside=self.nside)
-            # count the number of events in each healpix pixel.
-            np.add.at(self.binned_data[i], pix, 1.)
+            # Now for each spectral bin, form the list of healpix pixels.
+            self.binned_data = np.zeros(shape=(len(bin_idx), 12*self.nside**2))
+            for i in range(self.binned_data.shape[0]):
+                # Convert sky coords to healpix pixel number
+                idx = bin_idx[i]
+                pix = Tools.ang2hpix(data['L'][idx], data['B'][idx], nside=self.nside)
+                # count the number of events in each healpix pixel.
+                np.add.at(self.binned_data[i], pix, 1.)
+            if outfile is not None:
+                np.save(open(outfile, 'wb'), self.binned_data)
+        else:
+            self.binned_data = np.load(infile)
 
 
     def GenSquareMask(self, l_range, b_range, plane_mask=0, merge=False):
@@ -122,10 +130,10 @@ class Analysis():
         # Find lat/lon of each healpix pixel
         l_pix, b_pix = Tools.hpix2ang(hpix=np.arange(12*self.nside**2),nside=self.nside)
         # Find elements that are masked
-        idx = np.where( ((l_pix<l_max) | (l_pix>(l_min+360)))
-                  & (b_pix<b_max) & (b_pix>b_min)
-                  & (np.abs(b_pix)>plane_mask) )[0]
-        mask[idx] = 1. # Set unmasked elements to 1 
+        idx = np.where(((l_pix < l_max) | (l_pix > (l_min+360)))
+                       & (b_pix < b_max) & (b_pix > b_min)
+                       & (np.abs(b_pix) > plane_mask))[0]
+        mask[idx] = 1.  # Set unmasked elements to 1
         
         if merge is True:
             masked_idx = np.where(mask == 0)[0]
@@ -134,7 +142,7 @@ class Analysis():
             self.mask = mask
         return mask
 
-    def ApplyIRF(self, hpix, E_min, E_max, noPSF):
+    def ApplyIRF(self, hpix, E_min, E_max, noPSF=False):
         """
         Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
         These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
@@ -149,9 +157,9 @@ class Analysis():
         if noPSF is False:
             hpix = Tools.ApplyGaussianPSF(hpix, E_min, E_max, self.psfFile) 
         # Get l,b for each healpix pixel 
-        l,b = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
+        l, b = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
         # For each healpix pixel, multiply by the exposure. 
-        hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expcube)
+        hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expCube)
 
         return hpix
 
@@ -200,7 +208,7 @@ class Analysis():
                          ApplyIRF=False, sourceClass='PSC')
 
 
-    def GenPointSourceTemplate(self, pscmap=None):
+    def GenPointSourceTemplate(self, pscmap=None, onlyidx=None):
         """
         Generates a point source count map valid for the current analysis based on 2fgl catalog.  This can take a long
         time so it is usually done once and then saved.
@@ -217,10 +225,10 @@ class Analysis():
                                            fglpath=self.fglpath,
                                            expcube=self.expCube,
                                            psffile=self.psfFile,
-                                           maxpsf = 5.,
+                                           maxpsf = 10.,
                                            res=0.125,
                                            nside=self.nside,
-                                           filename=pscmap)
+                                           filename=pscmap, onlyidx=onlyidx)
 
         return total_map
 
@@ -228,14 +236,14 @@ class Analysis():
         """
         Prints the names and properties of each template in the template list.
         """
-        print ('%20s' % 'NAME', '%25s' % 'LIMITS', '%10s' % 'VALUE', '%10s' % 'FIXNORM', '%10s' % 'FIXSPEC',
-               '%10s' % 'SRCCLASS')
+        print '%20s' % 'NAME', '%25s' % 'LIMITS', '%10s' % 'VALUE', '%10s' % 'FIXNORM', '%10s' % 'FIXSPEC',
+        print '%10s' % 'SRCCLASS'
         for key in self.templateList:
             temp = self.templateList[key]
-            print ('%20s' % key, '%25s' % temp.limits, '%10s' % temp.value, '%10s' % temp.fixNorm,
-                   '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass)
+            print '%20s' % key, '%25s' % temp.limits, '%10s' % temp.value, '%10s' % temp.fixNorm,
+            print '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass
 
-    def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0,1e5], value=1, ApplyIRF=True,
+    def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0, 1e5], value=1, ApplyIRF=True,
                     sourceClass='GEN'):
         """
         Add Template to the template list.
@@ -250,7 +258,7 @@ class Analysis():
         :param    value:       Initial value for the template normalization.
         """
         # Error Checking on shape of input cube. 
-        if (healpixCube.shape[0] != (len(self.bin_edges)-1)) or (healpixCube.shape[1]!=12*self.nside**2):
+        if (healpixCube.shape[0] != (len(self.bin_edges)-1)) or (healpixCube.shape[1] != (12*self.nside**2)):
             raise(Exception("Shape of template does not match binning"))
 
         if ApplyIRF:
@@ -302,7 +310,7 @@ class Analysis():
         self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=True,
                         fixNorm=True, limits=[0, 1e5], value=1, ApplyIRF=True, sourceClass='ISO')
 
-        # TODO: NEED TO DEAL WITH UNCERTAINTY VECTOR
+        # TODO: NEED TO DEAL WITH UNCERTAINTY VECTOR in likelihood fit.
 
     def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20., spectrum=None):
         """
@@ -319,7 +327,7 @@ class Analysis():
         :return: A healpix 'cube'. 2-dimensions: 1st is energy second is healpix pixel.  If spectrum is not supplied
                 this is redundent.
         """
-        # TODO: Allow spectrum input to be filename and read in a file to (E, dNdE) ASCII file to integrate.
+        # TODO: Allow spectrum input via file. e.g. (E, dNdE) ASCII file which will then be integrated in each bin.
 
         # Generate the DM template.  This gives units in J-fact so we divide by something reasonable for the fit.
         # Say the max value.
@@ -358,7 +366,7 @@ class Analysis():
                                         self.scfile, self.evclass, self.convtype,  self.zmax, self.E_min, self.E_max,
                                         self.irf)
 
-    def AddFermiDiffuseModel(self, diffuse_path):
+    def AddFermiDiffuseModel(self, diffuse_path, infile=None, outfile=None):
         """
         Adds a fermi diffuse model to the template.  Input map is a fits file containing a cartesian mapcube.
         This gets resampled into a healpix cube, integrated over energy,
@@ -367,17 +375,44 @@ class Analysis():
         :return: None
         """
 
-        healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
+        if infile is None:
+            healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
 
-        # For each energy bin, sample and interpolate the map, then
-        for i in range(self.n_bins):
-            # SampleCartesianMap takes care of sub-binning.
-            Tools.SampleCartesianMap(fits=diffuse_path, E_min=self.bin_edges[i], self.bin_edges[i+1], self.nside)
-        self.AddTemplate(fixSpectrum=True, fixNorm=False, value=1, ApplyIRF=True, sourceClass='GEN')
+            # For each energy bin, sample and interpolate the map, then
+            for i in range(self.n_bins):
+                # SampleCartesianMap takes care of sub-binning.
+                healpixcube[i] = Tools.SampleCartesianMap(fits=diffuse_path,
+                                                          E_min=self.bin_edges[i], E_max=self.bin_edges[i+1],
+                                                          nside=self.nside)
+            if outfile is not None:
+                np.save(open(outfile, 'wb'), healpixcube)
+
+            self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
+                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.])
+
+        else:
+            healpixcube = np.load(infile)
+            self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
+                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.])
+
+    def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30):
+        """
+        Runs the likelihood analysis.
+        :param print_level: 0=Quiet, 1=Verbosse
+        :param use_basinhopping: Refine migrad optimization with a basinhopping algortithm. Generally recommended.
+        :param start_fresh: Skip migrad and just use basinhopping.
+        :param niter_success: Number of successful iterations required before stopping basinhopping.
+        :returns m, res: m is an iMinuit object and res is a scipy minimization object.
+        """
+        self.m, self.res = GammaLikelihood.RunLikelihood(self, print_level=print_level,
+                                                         use_basinhopping=use_basinhopping,
+                                                         start_fresh=start_fresh, niter_success=niter_success)
+
+        return self.m, self.res
 
 
     # TODO: ADD INTERFACES TO GALPROP MAPS
-
+    # TODO: Add calculate point source map weights for fitting..
 
 
 
