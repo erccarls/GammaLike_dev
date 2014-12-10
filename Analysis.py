@@ -409,7 +409,10 @@ class Analysis():
                                                          use_basinhopping=use_basinhopping,
                                                          start_fresh=start_fresh, niter_success=niter_success)
 
-        
+        for key, val in self.m.values.items():
+            print key
+        for key in self.m.values:
+            print key
 
 
 

@@ -122,6 +122,7 @@ class like():
         self.use_cuda = True
         try:
             import cudamat as cm
+            self.cm = cm
             cm.cublas_init()
             self.cmData = cm.CUDAMatrix(data)
         except:
@@ -144,9 +145,9 @@ class like():
         #------------------------------------------------
         # Uncomment here for GPU mode using CUDA + cudamat libraries
         else:
-            cmModel = cm.CUDAMatrix(model)
+            cmModel = self.cm.CUDAMatrix(model)
             cmModel_orig = cmModel.copy()
-            neg_loglikelihood = -cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
+            neg_loglikelihood = -self.cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
 
         if self.ncall%500==0: print self.ncall, neg_loglikelihood
         self.ncall+=1
@@ -161,9 +162,9 @@ class like():
     
         # gpu mode
         if self.use_cuda:
-            cmModel = cm.CUDAMatrix(model)
+            cmModel = self.cm.CUDAMatrix(model)
             cmModel_orig = cmModel.copy()
-            neg_loglikelihood = -cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
+            neg_loglikelihood = -self.cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
 
         # cpu mode
         else:
@@ -178,6 +179,11 @@ class like():
     foo = imp.load_source('tmplike', f.name)
     if print_level > 0:
         print "Code generation completed in", "{:10.4e}".format(time.time()-start), 's'
+        try:
+            import cudamat
+            print "Using GPU mode. (Successful import of cudamat module.)"
+        except:
+            print "Fallback to CPU mode.  (Failed to import cudamat libraries.)"
 
     start = time.time()
     like = foo.like(analysis.templateList, masked_data)
