@@ -67,8 +67,9 @@ class Analysis():
         self.binned_data = None  # master list of bin counts. 1st index is spectral, 2nd is pixel_number
         self.mask = None         # Mask. 0 is not analyzed. between 0-1 corresponds to weights. 
         self.templateList = {}   # Dict of analysis templates 
-
-        self.dm_renorm = 1e19  # renormalization constant for DM template
+        self.fitted = False      # True if fit has been run with the current templateList.
+        self.residual = None     # After a fit, this is automatically updated.
+        self.dm_renorm = 1e19    # renormalization constant for DM template
 
         prefix_n_bins = len(prefix_bins)-1
         # --------------------------------------------------------------------
@@ -164,7 +165,7 @@ class Analysis():
         return hpix
 
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
-                                    fixSpectrum=False, fixNorm=False, limits=[0, 1e2], value=1,):
+                                    fixSpectrum=False, fixNorm=False, limits=[0., 10.], value=1,):
         """
         Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted
         to a healpix template.
@@ -257,6 +258,9 @@ class Analysis():
         :param    limits:      Specify range of template normalizations.
         :param    value:       Initial value for the template normalization.
         """
+
+        self.fitted = False
+
         # Error Checking on shape of input cube. 
         if (healpixCube.shape[0] != (len(self.bin_edges)-1)) or (healpixCube.shape[1] != (12*self.nside**2)):
             raise(Exception("Shape of template does not match binning"))
@@ -398,7 +402,8 @@ class Analysis():
 
     def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30):
         """
-        Runs the likelihood analysis.
+        Runs the likelihood analysis on the current templateList.
+
         :param print_level: 0=Quiet, 1=Verbosse
         :param use_basinhopping: Refine migrad optimization with a basinhopping algortithm. Generally recommended.
         :param start_fresh: Skip migrad and just use basinhopping.
@@ -408,19 +413,53 @@ class Analysis():
         self.m, self.res = GammaLikelihood.RunLikelihood(self, print_level=print_level,
                                                          use_basinhopping=use_basinhopping,
                                                          start_fresh=start_fresh, niter_success=niter_success)
-
-        for key, val in self.m.values.items():
-            print key
+        
+        # Need mapping to list output of res. m.values is a dict for looping over
+        # this gives the correct order corresponding to res.x.  This is bad python practice, but it works....
+        val_idx = {}
+        count = 0
         for key in self.m.values:
-            print key
+            val_idx[key] = count
+            count += 1
 
+        # Run through the templates and update values to the best fit.
+        for key, t in self.templateList.items():
+            if t.fixSpectrum:
+                if self.res is not None:
+                    t.value = self.res.x[val_idx[key]]
+                else:
+                    t.value = self.m.values[key]
+            else:
+                if self.res is not None:
+                    t.value = np.array([self.res.x[val_idx[key+'_'+str(i)]] for i in range(self.n_bins)])
+                else:
+                    t.value = np.array([self.m.value[key+'_'+str(i)] for i in range(self.n_bins)])
 
-
+        self.fitted = True
+        self.residual = self.GetResidual()
 
         return self.m, self.res
 
+    def GetResidual(self):
+        """
+        btain the residual by subtracting off the best fit components.
 
+        :return healpixcube: a healpix image of the residuals.
+        """
+        if not self.fitted:
+            raise Exception('No fit run, or template added since last fit. Call "RunLikelihood()"')
 
+        # Start with a copy of the binned photons and iterate through each template.
+        residual = copy.copy(self.binned_data)
+        for key, t in self.templateList.items():
+            # Make sure this template has been fit already
+            if t.fixSpectrum:
+                residual -= t.value*t.healpixCube
+            else:
+                for i_E in range(self.n_bins):
+                    residual[i_E] -= t.value[i_E]*t.healpixCube[i_E]
+
+        return residual*self.mask
 
     # TODO: ADD INTERFACES TO GALPROP MAPS
     # TODO: Add calculate point source map weights for fitting..
