@@ -70,6 +70,9 @@ class Analysis():
         self.fitted = False      # True if fit has been run with the current templateList.
         self.residual = None     # After a fit, this is automatically updated.
         self.dm_renorm = 1e19    # renormalization constant for DM template
+        self.m = None            # iMinuit results object
+        self.res = None          # scipy minimizer results object.
+        self.res_vals = None     # dict with best fit values for basinhopping minimizer.
 
         prefix_n_bins = len(prefix_bins)-1
         # --------------------------------------------------------------------
@@ -313,11 +316,12 @@ class Analysis():
         # Add the template to the list. 
         # IRFs are applied during add template.  This multiplies by cm^2 s
         self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=True,
-                        fixNorm=fixNorm, limits=[0, 5], value=1, ApplyIRF=True, sourceClass='ISO')
+                        fixNorm=fixNorm, limits=[0, 5.0], value=1, ApplyIRF=True, sourceClass='ISO')
 
         # TODO: NEED TO DEAL WITH UNCERTAINTY VECTOR in likelihood fit.
 
-    def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20., spectrum=None):
+    def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20.,
+                      spectrum=None, limits=[0, 200.]):
         """
         Generates a dark matter template and adds it to the current template stack.
 
@@ -329,6 +333,8 @@ class Analysis():
         :param r_s: Scale factor
         :param spectrum: Input vector for normalizations the DM spectrum should be fixed (needs to be
                 pre-integrated over bins).
+        :param limits: Limiting range for template normalization.  This usually does not need to be changed since '
+                    the template will be automatically renormalized to have 5 counts in the max pixel.
         :return: A healpix 'cube'. 2-dimensions: 1st is energy second is healpix pixel.  If spectrum is not supplied
                 this is redundent.
         """
@@ -337,19 +343,23 @@ class Analysis():
         # Generate the DM template.  This gives units in J-fact so we divide by something reasonable for the fit.
         # Say the max value.
         tmp = DM.GenNFW(nside=self.nside, profile=profile, decay=decay, gamma=gamma, axesratio=axesratio, rotation=0.,
-                        offset=offset, r_s=r_s, mult_solid_ang=True)/self.dm_renorm
+                        offset=offset, r_s=r_s, mult_solid_ang=True)
+
+        exposure = Tools.GetExpMap(E_min=1e3, E_max=2e3, l=0., b=0., expcube=self.expCube)
+        self.dm_renorm = 5./exposure/np.max(tmp)
+        tmp *= self.dm_renorm
 
         healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
 
         if spectrum is None:
             for i in range(self.n_bins):
                 healpixcube[i] = tmp
-            self.AddTemplate(name='DM', healpixcube=healpixcube, fixSpectrum=False, fixNorm=False, limits=[0,1e5],
+            self.AddTemplate(name='DM', healpixCube=healpixcube, fixSpectrum=False, fixNorm=False, limits=limits,
                              value=1, ApplyIRF=True, sourceClass='GEN')
         else:
             for i in range(self.n_bins):
                 healpixcube[i] = tmp
-            self.AddTemplate(name='DM', healpixcube=healpixcube, fixSpectrum=True, fixNorm=False, limits=[0,1e5],
+            self.AddTemplate(name='DM', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False, limits=limits,
                              value=1, ApplyIRF=True, sourceClass='GEN')
         return tmp
 
@@ -400,7 +410,7 @@ class Analysis():
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
                              value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.])
 
-    def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30):
+    def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50):
         """
         Runs the likelihood analysis on the current templateList.
 
@@ -410,39 +420,32 @@ class Analysis():
         :param niter_success: Number of successful iterations required before stopping basinhopping.
         :returns m, res: m is an iMinuit object and res is a scipy minimization object.
         """
-        self.m, self.res = GammaLikelihood.RunLikelihood(self, print_level=print_level,
-                                                         use_basinhopping=use_basinhopping,
-                                                         start_fresh=start_fresh, niter_success=niter_success)
-        
-        # Need mapping to list output of res. m.values is a dict for looping over
-        # this gives the correct order corresponding to res.x.  This is bad python practice, but it works....
-        val_idx = {}
-        count = 0
-        for key in self.m.values:
-            val_idx[key] = count
-            count += 1
+        self.m, self.res, self.res_vals = GammaLikelihood.RunLikelihood(self, print_level=print_level,
+                                                                        use_basinhopping=use_basinhopping,
+                                                                        start_fresh=start_fresh,
+                                                                        niter_success=niter_success)
 
         # Run through the templates and update values to the best fit.
         for key, t in self.templateList.items():
             if t.fixSpectrum:
-                if self.res is not None:
-                    t.value = self.res.x[val_idx[key]]
+                if self.res_vals is not None:
+                    t.value = self.res_vals[key]
                 else:
                     t.value = self.m.values[key]
             else:
                 if self.res is not None:
-                    t.value = np.array([self.res.x[val_idx[key+'_'+str(i)]] for i in range(self.n_bins)])
+                    t.value = np.array([self.res_vals[key+'_'+str(i)] for i in range(self.n_bins)])
                 else:
                     t.value = np.array([self.m.value[key+'_'+str(i)] for i in range(self.n_bins)])
 
         self.fitted = True
         self.residual = self.GetResidual()
 
-        return self.m, self.res
+        return self.m, self.res, self.res_vals
 
     def GetResidual(self):
         """
-        btain the residual by subtracting off the best fit components.
+        Obtain the residual by subtracting off the best fit components.
 
         :return healpixcube: a healpix image of the residuals.
         """
@@ -461,9 +464,63 @@ class Analysis():
 
         return residual*self.mask
 
-    # TODO: ADD INTERFACES TO GALPROP MAPS
-    # TODO: Add calculate point source map weights for fitting..
+    def GetSpectrum(self, name):
+        """
+        Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin.
 
+        :params name: name of template to get spectrum of
+        :returns E, flux, stat_errors: E is the logarithmic center of each energy bin
+                                       flux is the flux averaged over the region in [s^-1 cm^-2 sr^-1 MeV^-1]
+                                       stat_erros is the statistical error on the flux.
+        """
+        if name not in self.templateList:
+            raise KeyError("name '" + name + "' not in templateList.")
+
+        if not self.fitted:
+            print 'Warning! Template fitting has not been done. returned spectrum is equal to input spectrum.'
+
+        # Get the bin centers
+        bin_centers = np.array([10**(0.5*(np.log10(self.bin_edges[i+1])+np.log10(self.bin_edges[i])))
+                                for i in range(self.n_bins)])
+
+        # Run through the template and obtain the spectrum in total counts over the masked area
+        mask_idx = np.nonzero(self.mask)[0]
+        t = self.templateList[name]
+        flux, stat_errors = [], []
+        # Iterate over each energy bin
+        for i_E in range(self.n_bins):
+
+            # Get energy bin boundaries
+            E_min, E_max = self.bin_edges[i_E], self.bin_edges[i_E+1]
+
+            # Get the effective area for the masked region.
+            l, b = Tools.hpix2ang(mask_idx, self.nside)
+            # eff_area*bin width*solid_angle
+            eff_area = (Tools.GetExpMap(E_min, E_max, l, b, self.expCube)
+                        * (E_max-E_min)
+                        * healpy.pixelfunc.nside2pixarea(self.nside))
+            # if value is not a vector
+            if np.ndim(t.value) == 0:
+                stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)\
+                              / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
+                count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value[i_E]
+
+            # if value is a vector
+            elif np.ndim(t.value) == 1 and len(t.value) == self.n_bins:
+                stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value[i_E])
+                              / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
+                count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value[i_E]
+            else:
+                raise Exception("template.value attribute has invalid dimension or type.")
+            flux.append(count)
+            stat_errors.append(stat_error)
+
+        return bin_centers, np.array(flux), np.array(stat_errors)
+
+
+    # TODO: ADD INTERFACES TO GALPROP MAPS
+    # TODO: Add calculate point source map weights for fitting.
+    # TODO: Get P.P. Factor corresponding to a given DM template normalization.
 
 
 
