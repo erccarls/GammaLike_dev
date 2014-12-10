@@ -50,8 +50,8 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
 
     # mask the data as well.
     masked_data = analysis.binned_data[:, mask_idx].astype(np.float32)
-    if mask_idx.shape[0] < 10:
-        raise Exception('Masked number of pixels <10. Has mask been initialized?')
+    #if mask_idx.shape[0] < 10:
+    #    raise Exception('Masked number of pixels <10. Has mask been initialized?')
 
     if print_level > 0:
         print "Masking completed in", "{:10.4e}".format(time.time()-start), 's'
@@ -113,16 +113,22 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
 import numpy as np 
 import time 
 
-import cudamat as cm
+
 
 class like():
     def __init__(self,templateList,data):
         self.templateList = templateList
         self.data = data
-        cm.cublas_init()
-        self.cmData = cm.CUDAMatrix(data)
+        self.use_cuda = True
+        try:
+            import cudamat as cm
+            cm.cublas_init()
+            self.cmData = cm.CUDAMatrix(data)
+        except:
+            self.use_cuda = False
         self.ncall=0
-    
+
+
     def f(self,"""+args+"""):
         # init model array 
         model = np.zeros(shape=self.templateList[self.templateList.keys()[0]].healpixCubeMasked.shape)
@@ -132,13 +138,15 @@ class like():
         
         #------------------------------------------------
         # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
-        # neg_loglikelihood_cpu = np.sum(-self.data*np.log(model)+model)
+        if self.use_cuda == False:
+            neg_loglikelihood_cpu = np.sum(-self.data*np.log(model)+model)
         
         #------------------------------------------------
         # Uncomment here for GPU mode using CUDA + cudamat libraries
-        cmModel = cm.CUDAMatrix(model)
-        cmModel_orig = cmModel.copy()
-        neg_loglikelihood = -cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
+        else:
+            cmModel = cm.CUDAMatrix(model)
+            cmModel_orig = cmModel.copy()
+            neg_loglikelihood = -cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
 
         if self.ncall%500==0: print self.ncall, neg_loglikelihood
         self.ncall+=1
@@ -152,12 +160,14 @@ class like():
 """ + master_model +"""
     
         # gpu mode
-        cmModel = cm.CUDAMatrix(model)
-        cmModel_orig = cmModel.copy()
-        neg_loglikelihood = -cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
+        if self.use_cuda:
+            cmModel = cm.CUDAMatrix(model)
+            cmModel_orig = cmModel.copy()
+            neg_loglikelihood = -cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
 
         # cpu mode
-        #neg_loglikelihood = np.sum(-self.flat_data*np.log(model)+model)
+        else:
+            neg_loglikelihood = np.sum(-self.flat_data*np.log(model)+model)
                 
         return neg_loglikelihood
         """)
