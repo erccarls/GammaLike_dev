@@ -282,11 +282,12 @@ class Analysis():
         """
         self.templateList.pop(name)
 
-    def AddIsotropicTemplate(self, isofile='iso_clean_v05.txt'):
+    def AddIsotropicTemplate(self, isofile='iso_clean_v05.txt', fixNorm=True):
         """
         Generates an isotropic template from a spectral file and add it to the current templateList
 
         :param isofile:  The file should be the same format as the isotropic files
+        :param fixNorm: Fix the overall normalization of the isotropic template.
          from fermi (3 columns with E,flux,fluxUnc.)
         """
         # Load isotropic emission file
@@ -303,12 +304,12 @@ class Analysis():
         from scipy.integrate import quad
         for i_E in range(len(self.bin_edges)-1):
             # multiply by integral(flux *dE )*solidangle
-            healpixCube[i_E]*=quad(fluxInterp, self.bin_edges[i_E], self.bin_edges[i_E+1])[0]*solidAngle
+            healpixCube[i_E] *= quad(fluxInterp, self.bin_edges[i_E], self.bin_edges[i_E+1])[0]*solidAngle
         
         # Add the template to the list. 
         # IRFs are applied during add template.  This multiplies by cm^2 s
         self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=True,
-                        fixNorm=True, limits=[0, 1e5], value=1, ApplyIRF=True, sourceClass='ISO')
+                        fixNorm=fixNorm, limits=[0, 5], value=1, ApplyIRF=True, sourceClass='ISO')
 
         # TODO: NEED TO DEAL WITH UNCERTAINTY VECTOR in likelihood fit.
 
@@ -408,7 +409,14 @@ class Analysis():
                                                          use_basinhopping=use_basinhopping,
                                                          start_fresh=start_fresh, niter_success=niter_success)
 
+        
+
+
+
+
         return self.m, self.res
+
+
 
 
     # TODO: ADD INTERFACES TO GALPROP MAPS

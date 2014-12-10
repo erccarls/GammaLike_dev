@@ -8,7 +8,7 @@
 #--------------------------------------------------------------------------
 
 class Template():
-    def __init__(self, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0, 1e5], value=1, sourceClass='GEN',valueUnc=None):
+    def __init__(self, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0, 10], value=1, sourceClass='GEN',valueUnc=None):
         '''
 
         :param healpixCube: Actually a 2-d array with first index selecting energy and second index selecting the healpix index
@@ -31,8 +31,9 @@ class Template():
         self.value = value
         self.sourceClass = sourceClass
         self.valueUnc = valueUnc
+        self.fitVal = None
 
-        if fixNorm:
-            self.limits=[value, value]
+        #if fixNorm:
+        #    self.limits = [value, value]
 
 
