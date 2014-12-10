@@ -149,8 +149,8 @@ class like():
             cmModel_orig = cmModel.copy()
             neg_loglikelihood = -self.cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
 
-        if self.ncall%500==0: print self.ncall, neg_loglikelihood
-        self.ncall+=1
+        #if self.ncall%500==0: print self.ncall, neg_loglikelihood
+        #self.ncall+=1
 
         return neg_loglikelihood
         
@@ -173,7 +173,7 @@ class like():
         return neg_loglikelihood
         """)
     f.close()
-    
+
     #---------------------------------------------------------------------------
     # Now load the source 
     foo = imp.load_source('tmplike', f.name)
@@ -215,9 +215,12 @@ class like():
 
     res = None
     if use_basinhopping:
-        res = basinhopping(like.f2, x0, niter=20000, disp=bool(print_level),
+        if print_level > 0:
+            disp = True
+        else:
+            disp = False
+        res = basinhopping(like.f2, x0, niter=20000, disp=disp,
                            stepsize=.1, minimizer_kwargs={'bounds': bounds}, niter_success=niter_success)
-       
         return m, res
     else:
         return m, None
