@@ -65,12 +65,16 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     # pyminut initial step size and print level
     kwargs = {'errordef': 0.5, 'print_level': print_level}
 
+    # This map keeps track of the arguments order since scipy minimizer returns values in tuple not dict.
+    argMap = []
+
     # Iterate over the input templates and add each template to the fitting functions args.
     for key in analysis.templateList: 
         t = analysis.templateList[key]
         if t.fixSpectrum:
             # Just add an overall normalization parameter and the same for the model.
             args += key + ','
+            argMap.append(key)
             for Ebin in range(t.healpixCube.shape[0]):
                 model[Ebin] += key + "*self.templateList['"+key+"'].healpixCubeMasked["+str(Ebin)+"]+"
             # Set initial value and limits 
@@ -83,6 +87,7 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
             # Add a normalization component for each spectral bin in each template.
             for Ebin in range(t.healpixCube.shape[0]):
                 args += key + '_' + str(Ebin)+','
+                argMap.append(key + '_' + str(Ebin))
                 model[Ebin] += key + '_' + str(Ebin) + "*self.templateList['"+key+"'].healpixCubeMasked["+str(Ebin)+"]+"
                 kwargs['error_' + key + '_' + str(Ebin)] = .25  # Initial step size
                 # If we have an array or list of initial values....
@@ -197,23 +202,19 @@ class like():
     #m.minos(maxcall=10000,sigma=2.)
 
     if print_level > 0:
-        print "Likelihood fit completed in", "{:10.4e}".format(time.time()-start), 's'
+        print "Migrad completed fit completed in", "{:10.4e}".format(time.time()-start), 's'
 
-    #for key in m.values:
-    #    m.values[key] *=norms[key]  
-    
+
     x0, bounds = [], []
-    for key in m.values:
+
+    for key in argMap:
         if start_fresh:
-            x0.append(.5)
+            # TODO: This should read input values, but start_fresh=True is not likely to be used much...
+            x0.append(1.)
         else:
             x0.append(m.values[key])
-
         bounds.append(m.fitarg['limit_'+key])
-        
-    #x0= [0.0023745112938103616, 0.0076762838338029164, 0.015531865766668677, 0.25389806736844778, 0.52689529873096774, 0.55214060049483027, 0.71587883311893541, 0.72511166889210776, 0.81878987179515239, 1.6750975317701988, 1.7630033238120912, 2.1324741153875353, 2.1551241719112801, 2.2237980257889172, 2.3384737860215554, 2.3568283839538431, 2.828097476873618, 2.9752743048720931, 3.2798737086267926, 3.6816482159016939, 5.1789699219268117, 20.382327566375256, 20.939570160493506, 25.183490330569224, 40.14694999605431]
 
-    res = None
     if use_basinhopping:
         if print_level > 0:
             disp = True
@@ -221,9 +222,17 @@ class like():
             disp = False
         res = basinhopping(like.f2, x0, niter=20000, disp=disp,
                            stepsize=.1, minimizer_kwargs={'bounds': bounds}, niter_success=niter_success)
-        return m, res
+        # Generate a dict of the best fit values against the keys like iMinuit object has.
+        res_vals = {}
+        for i, key in enumerate(argMap):
+            res_vals[key] = res.x[i]
+
+        if print_level > 0:
+            print "Basinhopping completed fit completed in", "{:10.4e}".format(time.time()-start), 's'
+
+        return m, res, res_vals
     else:
-        return m, None
+        return m, None, None
     
           
 
