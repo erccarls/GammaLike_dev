@@ -73,6 +73,7 @@ class Analysis():
         self.m = None            # iMinuit results object
         self.res = None          # scipy minimizer results object.
         self.res_vals = None     # dict with best fit values for basinhopping minimizer.
+        self.jfactor = 0.        # Dark matter j-factor
 
         prefix_n_bins = len(prefix_bins)-1
         # --------------------------------------------------------------------
@@ -345,6 +346,8 @@ class Analysis():
         tmp = DM.GenNFW(nside=self.nside, profile=profile, decay=decay, gamma=gamma, axesratio=axesratio, rotation=0.,
                         offset=offset, r_s=r_s, mult_solid_ang=True)
 
+        self.jfactor = np.sum(tmp*self.mask)
+
         exposure = Tools.GetExpMap(E_min=1e3, E_max=2e3, l=0., b=0., expcube=self.expCube)
         self.dm_renorm = 5./exposure/np.max(tmp)
         tmp *= self.dm_renorm
@@ -520,7 +523,6 @@ class Analysis():
 
     # TODO: ADD INTERFACES TO GALPROP MAPS
     # TODO: Add calculate point source map weights for fitting.
-    # TODO: Get P.P. Factor corresponding to a given DM template normalization.
 
 
 
