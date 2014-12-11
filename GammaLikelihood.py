@@ -36,6 +36,9 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
         if analysis.templateList[key].healpixCube.shape != shape:
             raise Exception("Input template " + key + " does not match the shape of the binned data.")
 
+    if analysis.psc_weights is None:
+        print 'Warning! Pixel weights not initialized.  Default to equal weighting.'
+
     #---------------------------------------------------------------------------
     # Select only unmasked pixels.  Less expensive to do here rather than later.
     start = time.time()
@@ -121,15 +124,17 @@ import time
 
 
 class like():
-    def __init__(self,templateList,data):
+    def __init__(self, templateList, data, psc_weights):
         self.templateList = templateList
         self.data = data
         self.use_cuda = True
+        self.psc_weights = psc_weights
         try:
             import cudamat as cm
             self.cm = cm
             cm.cublas_init()
             self.cmData = cm.CUDAMatrix(data)
+            self.cm_psc_weights = cm.CUDAMatrix(psc_weights)
         except:
             self.use_cuda = False
         self.ncall=0
@@ -145,14 +150,14 @@ class like():
         #------------------------------------------------
         # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
         if self.use_cuda == False:
-            neg_loglikelihood_cpu = np.sum(-self.data*np.log(model)+model)
+            neg_loglikelihood_cpu = np.sum(self.psc_weights*(model-self.data*np.log(model)))
         
         #------------------------------------------------
         # Uncomment here for GPU mode using CUDA + cudamat libraries
         else:
             cmModel = self.cm.CUDAMatrix(model)
             cmModel_orig = cmModel.copy()
-            neg_loglikelihood = -self.cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
+            neg_loglikelihood = cmModel_orig.subtract(self.cm.log(cmModel).mult(self.cmData)).mult(self.cm_psc_weights).sum(axis=0).sum(axis=1).asarray()[0,0]
 
         #if self.ncall%500==0: print self.ncall, neg_loglikelihood
         #self.ncall+=1
@@ -169,11 +174,11 @@ class like():
         if self.use_cuda:
             cmModel = self.cm.CUDAMatrix(model)
             cmModel_orig = cmModel.copy()
-            neg_loglikelihood = -self.cm.log(cmModel).mult(self.cmData).subtract(cmModel_orig).sum(axis=0).sum(axis=1).asarray()[0,0]
+            neg_loglikelihood = cmModel_orig.subtract(self.cm.log(cmModel).mult(self.cmData)).mult(self.cm_psc_weights).sum(axis=0).sum(axis=1).asarray()[0,0]
 
         # cpu mode
         else:
-            neg_loglikelihood = np.sum(-self.flat_data*np.log(model)+model)
+            neg_loglikelihood = np.sum(self.psc_weights*(-self.flat_data*np.log(model)+model))
                 
         return neg_loglikelihood
         """)
@@ -191,7 +196,7 @@ class like():
             print "Fallback to CPU mode.  (Failed to import cudamat libraries.)"
 
     start = time.time()
-    like = foo.like(analysis.templateList, masked_data)
+    like = foo.like(analysis.templateList, masked_data, analysis.psc_weights[:, mask_idx].astype(np.float32))
 
     # Init migrad 
     m = Minuit(like.f, **kwargs)
@@ -202,7 +207,7 @@ class like():
     #m.minos(maxcall=10000,sigma=2.)
 
     if print_level > 0:
-        print "Migrad completed fit completed in", "{:10.4e}".format(time.time()-start), 's'
+        print "Migrad completed fitting", "{:10.2e}".format(time.time()-start), 's'
 
 
     x0, bounds = [], []
