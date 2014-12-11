@@ -75,6 +75,9 @@ class Analysis():
         self.res = None          # scipy minimizer results object.
         self.res_vals = None     # dict with best fit values for basinhopping minimizer.
         self.jfactor = 0.        # Dark matter j-factor
+        self.psc_weights = None  # Pixel weighting for likelihood analysis
+
+
 
         prefix_n_bins = len(prefix_bins)-1
         # --------------------------------------------------------------------
@@ -148,7 +151,7 @@ class Analysis():
             self.mask = mask
         return mask
 
-    def ApplyIRF(self, hpix, E_min, E_max, noPSF=False):
+    def ApplyIRF(self, hpix, E_min, E_max, noPSF=False, noExp=False):
         """
         Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
         These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
@@ -157,16 +160,17 @@ class Analysis():
         :param    hpix: A healpix array.
         :param    E_min: low energy boundary
         :param    E_max: high energy boundary
-        :param    noPSF: Do not apply the PSF (Exposure only)
+        :param    noPSF: Do not apply the PSF
+        :param    noExp: Do not apply the effective exposure
         """
         # Apply the PSF.  This is automatically spectrally weighted
         if noPSF is False:
             hpix = Tools.ApplyGaussianPSF(hpix, E_min, E_max, self.psfFile) 
         # Get l,b for each healpix pixel 
         l, b = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
-        # For each healpix pixel, multiply by the exposure. 
-        hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expCube)
-
+        # For each healpix pixel, multiply by the exposure.
+        if noExp is False:
+            hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expCube)
         return hpix
 
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
@@ -246,8 +250,18 @@ class Analysis():
         print '%10s' % 'SRCCLASS'
         for key in self.templateList:
             temp = self.templateList[key]
-            print '%20s' % key, '%25s' % temp.limits, '%10s' % temp.value, '%10s' % temp.fixNorm,
-            print '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass
+            if np.ndim(temp.value) == 0:
+                print '%20s' % key, '%25s' % temp.limits, '%10s' % ('%3.3e' % temp.value), '%10s' % temp.fixNorm,
+                print '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass
+            else:
+                print '%20s' % key, '%25s' % temp.limits, '%10s' % 'Vector', '%10s' % temp.fixNorm,
+                print '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass
+                print '         --------------------------------------------------------------------------------------'
+
+                for i, val in enumerate(temp.value):
+                    print '%20s' % ('[' + str(i) + ']'), '%25s' % temp.limits, '%10s' % ('%3.3e' % val), '%10s' % temp.fixNorm,
+                    print '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass
+                print '         --------------------------------------------------------------------------------------'
 
     def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0, 1e5], value=1, ApplyIRF=True,
                     sourceClass='GEN'):
@@ -323,7 +337,7 @@ class Analysis():
         # TODO: NEED TO DEAL WITH UNCERTAINTY VECTOR in likelihood fit.
 
     def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20.,
-                      spec_file=None, limits=[0, 200.]):
+                      spec_file=None, limits=[0, 50.]):
         """
         Generates a dark matter template and adds it to the current template stack.
 
@@ -336,7 +350,7 @@ class Analysis():
         :param spec_file: 2-column ascii file.  First column is E in MeV, second column is dN/dE per annihilation
                 in units ph/MeV.  The differential spectrum dN/dE will then be integrated over each energy bin.
         :param limits: Limiting range for template normalization.  This usually does not need to be changed since '
-                    the template will be automatically renormalized to have 5 counts in the max pixel.
+                    the template will be automatically renormalized to have a realistic flux in the max pixel.
         :return: A healpix 'cube'. 2-dimensions: 1st is energy second is healpix pixel.  If spectrum is not supplied
                 this is redundent.
         """
@@ -350,16 +364,19 @@ class Analysis():
         self.jfactor = np.sum(tmp*self.mask)
 
         exposure = Tools.GetExpMap(E_min=1e3, E_max=2e3, l=0., b=0., expcube=self.expCube)
-        self.dm_renorm = 5./exposure/np.max(tmp)
+        self.dm_renorm = 10./exposure/np.max(tmp)
         tmp *= self.dm_renorm
 
         healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
 
         if spec_file is None:
+            values = []
             for i in range(self.n_bins):
                 healpixcube[i] = tmp
+                values.append((self.bin_edges[i]/10e3)**-.5)
+            # Add the template.  Scale the values so that we get a roughly flat spectrum for faster convergence.
             self.AddTemplate(name='DM', healpixCube=healpixcube, fixSpectrum=False, fixNorm=False, limits=limits,
-                             value=1, ApplyIRF=True, sourceClass='GEN')
+                             value=values, ApplyIRF=True, sourceClass='GEN')
         else:
             energies, dNdE = np.genfromtxt(spec_file).T[:2]
             spec = lambda e: np.interp(e, energies, dNdE)
@@ -474,12 +491,12 @@ class Analysis():
         """
         Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin.
 
-        :params name: name of template to get spectrum of
+        :params name: name of template.  Use 'Data' to get the data spectrum
         :returns E, flux, stat_errors: E is the logarithmic center of each energy bin
                                        flux is the flux averaged over the region in [s^-1 cm^-2 sr^-1 MeV^-1]
                                        stat_errors is the statistical error on the flux.
         """
-        if name not in self.templateList:
+        if (name not in self.templateList) and (name is not 'Data'):
             raise KeyError("name '" + name + "' not in templateList.")
 
         if not self.fitted:
@@ -491,7 +508,13 @@ class Analysis():
 
         # Run through the template and obtain the spectrum in total counts over the masked area
         mask_idx = np.nonzero(self.mask)[0]
-        t = self.templateList[name]
+
+        # If looking for the data spectrum we need to temporarily create a template.
+        if name is 'Data':
+            t = Template.Template(healpixCube=self.binned_data)
+        else:
+            t = self.templateList[name]
+
         flux, stat_errors = [], []
         # Iterate over each energy bin
         for i_E in range(self.n_bins):
@@ -528,10 +551,10 @@ class Analysis():
         """
         Adds a fermi bubble template to the template stack.
 
-        :param templateFile: Requires file 'bubble_templates_diskcut30.0.fits'
+        :param template_file: Requires file 'bubble_templates_diskcut30.0.fits'
             style file (from Su & Finkbeiner) with an extension table with a NAME column containing "Whole bubble"
             and a TEMPLATE column with an order 8 healpix array.
-        :param specFile: filename containing two columns (no header).  First col is energy in MeV, second is
+        :param spec_file: filename containing two columns (no header).  First col is energy in MeV, second is
             dN/dE in units (s cm^2 sr MeV)^-1.
         :param fixSpectrum: If True, the spectrum is not allowed to float.
         """
@@ -563,6 +586,24 @@ class Analysis():
                          sourceClass='GEN')
 
 
+    def CalculatePixelWeights(self, diffuse_model, psc_model, alpha_psc=5., f_psc=0.1):
+        """
+        Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042).
+
+        :param diffuse_model: Path to healpixcube of diffuse model. Should be one of the fermi models.  Can obtain this
+            by using AddFermiDiffuseModel() with outfile.
+        :param outfile: If infile is None then PixelWeights are output to this path.
+        :param infile: reads the pixel weights from file.
+        """
+
+        diff_model = np.load(diffuse_model)
+        psc = np.load(psc_model)
+        
+        # Apply the PSF to the diffuse model before calculating weights.
+        for i_E in range(len(self.bin_edges)-1):
+            diff_model[i_E] = self.ApplyIRF(diff_model[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1])
+
+        self.psc_weights = 1./((psc/(f_psc*diff_model))**alpha_psc+1)
 
 
 
