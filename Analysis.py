@@ -13,6 +13,7 @@ import GenFermiData
 import SourceMap
 import GammaLikelihood
 import copy
+from scipy.integrate import quad
 
 class Analysis():
     #--------------------------------------------------------------------
@@ -290,7 +291,7 @@ class Analysis():
         """
         self.templateList.pop(name)
 
-    def AddIsotropicTemplate(self, isofile='iso_clean_v05.txt', fixNorm=True):
+    def AddIsotropicTemplate(self, isofile='./IGRB_ackerman_2014_modA.dat', fixNorm=True):
         """
         Generates an isotropic template from a spectral file and add it to the current templateList
 
@@ -322,7 +323,7 @@ class Analysis():
         # TODO: NEED TO DEAL WITH UNCERTAINTY VECTOR in likelihood fit.
 
     def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20.,
-                      spectrum=None, limits=[0, 200.]):
+                      spec_file=None, limits=[0, 200.]):
         """
         Generates a dark matter template and adds it to the current template stack.
 
@@ -332,14 +333,14 @@ class Analysis():
         :param axesratio: Stretch the *projected* dark matter profile along the +y axis
         :param offset: offsets from (glon,glat)=(0,0) in degrees
         :param r_s: Scale factor
-        :param spectrum: Input vector for normalizations the DM spectrum should be fixed (needs to be
-                pre-integrated over bins).
+        :param spec_file: 2-column ascii file.  First column is E in MeV, second column is dN/dE per annihilation
+                in units ph/MeV.  The differential spectrum dN/dE will then be integrated over each energy bin.
         :param limits: Limiting range for template normalization.  This usually does not need to be changed since '
                     the template will be automatically renormalized to have 5 counts in the max pixel.
         :return: A healpix 'cube'. 2-dimensions: 1st is energy second is healpix pixel.  If spectrum is not supplied
                 this is redundent.
         """
-        # TODO: Allow spectrum input via file. e.g. (E, dNdE) ASCII file which will then be integrated in each bin.
+
 
         # Generate the DM template.  This gives units in J-fact so we divide by something reasonable for the fit.
         # Say the max value.
@@ -354,14 +355,16 @@ class Analysis():
 
         healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
 
-        if spectrum is None:
+        if spec_file is None:
             for i in range(self.n_bins):
                 healpixcube[i] = tmp
             self.AddTemplate(name='DM', healpixCube=healpixcube, fixSpectrum=False, fixNorm=False, limits=limits,
                              value=1, ApplyIRF=True, sourceClass='GEN')
         else:
+            energies, dNdE = np.genfromtxt(spec_file).T[:2]
+            spec = lambda e: np.interp(e, energies, dNdE)
             for i in range(self.n_bins):
-                healpixcube[i] = tmp
+                healpixcube[i] = tmp*quad(spec, self.bin_edges[i], self.bin_edges[i+1])[0]
             self.AddTemplate(name='DM', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False, limits=limits,
                              value=1, ApplyIRF=True, sourceClass='GEN')
         return tmp
@@ -439,7 +442,7 @@ class Analysis():
                 if self.res is not None:
                     t.value = np.array([self.res_vals[key+'_'+str(i)] for i in range(self.n_bins)])
                 else:
-                    t.value = np.array([self.m.value[key+'_'+str(i)] for i in range(self.n_bins)])
+                    t.value = np.array([self.m.values[key+'_'+str(i)] for i in range(self.n_bins)])
 
         self.fitted = True
         self.residual = self.GetResidual()
@@ -474,13 +477,13 @@ class Analysis():
         :params name: name of template to get spectrum of
         :returns E, flux, stat_errors: E is the logarithmic center of each energy bin
                                        flux is the flux averaged over the region in [s^-1 cm^-2 sr^-1 MeV^-1]
-                                       stat_erros is the statistical error on the flux.
+                                       stat_errors is the statistical error on the flux.
         """
         if name not in self.templateList:
             raise KeyError("name '" + name + "' not in templateList.")
 
         if not self.fitted:
-            print 'Warning! Template fitting has not been done. returned spectrum is equal to input spectrum.'
+            print 'Warning! Template fitting has not been done. returned spectrum may equal input spectrum.'
 
         # Get the bin centers
         bin_centers = np.array([10**(0.5*(np.log10(self.bin_edges[i+1])+np.log10(self.bin_edges[i])))
@@ -504,9 +507,9 @@ class Analysis():
                         * healpy.pixelfunc.nside2pixarea(self.nside))
             # if value is not a vector
             if np.ndim(t.value) == 0:
-                stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)\
+                stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)
                               / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
-                count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value[i_E]
+                count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value
 
             # if value is a vector
             elif np.ndim(t.value) == 1 and len(t.value) == self.n_bins:
@@ -519,6 +522,48 @@ class Analysis():
             stat_errors.append(stat_error)
 
         return bin_centers, np.array(flux), np.array(stat_errors)
+
+    def AddFermiBubbleTemplate(self, template_file='./bubble_templates_diskcut30.0.fits',
+                               spec_file='./reduced_bubble_spec_apj_793_64.dat', fixSpectrum=True):
+        """
+        Adds a fermi bubble template to the template stack.
+
+        :param templateFile: Requires file 'bubble_templates_diskcut30.0.fits'
+            style file (from Su & Finkbeiner) with an extension table with a NAME column containing "Whole bubble"
+            and a TEMPLATE column with an order 8 healpix array.
+        :param specFile: filename containing two columns (no header).  First col is energy in MeV, second is
+            dN/dE in units (s cm^2 sr MeV)^-1.
+        :param fixSpectrum: If True, the spectrum is not allowed to float.
+        """
+
+        # TODO CURRENTLY SPATIAL BINNING OTHER THAN nside=256 not supported. Should add down/upsampling
+
+        # Load the template and spectrum
+        hdu = pyfits.open(template_file)
+        bub_idx = np.where(hdu[1].data['NAME'] == 'Whole bubble')
+        bubble = hdu[1].data['TEMPLATE'][bub_idx][0]
+        energy, dnde = np.genfromtxt(spec_file).T
+        spec = lambda e: np.interp(e, energy, dnde)
+        # Get lat/lon for each pixel
+        l,b = Tools.hpix2ang(np.arange(12*self.nside**2))
+
+        healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
+
+        for i_E in range(self.n_bins):
+            # Determine the counts in each bin.
+            e1, e2 = self.bin_edges[i_E], self.bin_edges[i_E+1]
+            # integrate spectrum over energy band
+            flux = quad(spec, e1, e2)[0]
+            # Multiply mask by counts.
+            healpixcube[i_E] = bubble*flux*(healpy.nside2pixarea(self.nside))
+
+        # Now each bin is in ph cm^-2 s^-1.  Apply IRF takes care of the rest.
+        self.AddTemplate(healpixCube=healpixcube, name='Bubbles', fixSpectrum=fixSpectrum,
+                         fixNorm=False, limits=[0, 1e2], value=1, ApplyIRF=True,
+                         sourceClass='GEN')
+
+
+
 
 
     # TODO: ADD INTERFACES TO GALPROP MAPS
