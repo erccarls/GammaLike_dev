@@ -14,6 +14,8 @@ import SourceMap
 import GammaLikelihood
 import copy
 from scipy.integrate import quad
+import multiprocessing as mp
+
 
 class Analysis():
     #--------------------------------------------------------------------
@@ -151,7 +153,7 @@ class Analysis():
             self.mask = mask
         return mask
 
-    def ApplyIRF(self, hpix, E_min, E_max, noPSF=False, noExp=False):
+    def ApplyIRF(self, hpix, E_min, E_max, noPSF=False, noExp=False, multiplier=1.):
         """
         Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
         These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
@@ -162,15 +164,16 @@ class Analysis():
         :param    E_max: high energy boundary
         :param    noPSF: Do not apply the PSF
         :param    noExp: Do not apply the effective exposure
+        :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
         """
         # Apply the PSF.  This is automatically spectrally weighted
         if noPSF is False:
-            hpix = Tools.ApplyGaussianPSF(hpix, E_min, E_max, self.psfFile) 
+            hpix = Tools.ApplyGaussianPSF(hpix, E_min, E_max, self.psfFile, multiplier=multiplier)
         # Get l,b for each healpix pixel 
         l, b = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
         # For each healpix pixel, multiply by the exposure.
         if noExp is False:
-            hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expCube)
+            hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expCube,)
         return hpix
 
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
@@ -196,7 +199,7 @@ class Analysis():
 
 
     def AddPointSourceTemplate(self, pscmap=None, name='PSC', fixNorm=False,
-                               limits=[0, 1e2], value=1):
+                               limits=[0, 1e2], value=1, multiplier=1.):
         """
         Adds a point source map to the list of templates.
 
@@ -205,6 +208,7 @@ class Analysis():
         :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
         :param    limits:      Specify range of template normalizations.
         :param    value:       Initial value for the template normalization.
+        :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
         """
         if pscmap is None:
             pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
@@ -213,9 +217,8 @@ class Analysis():
         except:
             raise Exception('No point source map found at path '+str(pscmap))
 
-
         self.AddTemplate(name, hpix, fixSpectrum=True, fixNorm=fixNorm, limits=limits, value=value,
-                         ApplyIRF=False, sourceClass='PSC')
+                         ApplyIRF=False, sourceClass='PSC', multiplier=multiplier)
 
 
     def GenPointSourceTemplate(self, pscmap=None, onlyidx=None):
@@ -263,8 +266,9 @@ class Analysis():
                     print '%10s' % temp.fixSpectrum, '%10s' % temp.sourceClass
                 print '         --------------------------------------------------------------------------------------'
 
+
     def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0, 1e5], value=1, ApplyIRF=True,
-                    sourceClass='GEN'):
+                    sourceClass='GEN', multiplier=1.):
         """
         Add Template to the template list.
 
@@ -276,6 +280,7 @@ class Analysis():
         :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
         :param    limits:      Specify range of template normalizations.
         :param    value:       Initial value for the template normalization.
+        :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
         """
 
         self.fitted = False
@@ -290,20 +295,21 @@ class Analysis():
                     healpixCube[i_E] = self.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
                                                      noPSF=True)
                 else:
-                    healpixCube[i_E] = self.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1])
+                    healpixCube[i_E] = self.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
+                                                     multiplier=multiplier)
 
         # Instantiate the template object. 
         template = Template.Template(healpixCube.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass)
         # Add the instance to the master template list.
         self.templateList[name] = template
 
-    def RemoveTemplate(self, name):
+    def DeleteTemplate(self, name):
         """
-        Removes a template from the template list.
+        Removes a template from templateList if it exists.
 
-        :param    name: Name of template to remove.
+        :param name: Name of template to delete.
         """
-        self.templateList.pop(name)
+        self.templateList.pop(name, None)
 
     def AddIsotropicTemplate(self, isofile='./IGRB_ackerman_2014_modA.dat', fixNorm=True):
         """
@@ -404,12 +410,15 @@ class Analysis():
                                         self.scfile, self.evclass, self.convtype,  self.zmax, self.E_min, self.E_max,
                                         self.irf)
 
-    def AddFermiDiffuseModel(self, diffuse_path, infile=None, outfile=None):
+    def AddFermiDiffuseModel(self, diffuse_path, infile=None, outfile=None, multiplier=1.):
         """
         Adds a fermi diffuse model to the template.  Input map is a fits file containing a cartesian mapcube.
         This gets resampled into a healpix cube, integrated over energy,
          applies PSF & effective exposure, and gets added to the templateList.
         :param diffuse_path: path to the diffuse model.
+        :param infile: Save the template to this path (reduce initial load time)
+        :param outfile: Save the template to this path (reduce initial load time) if infile is None
+
         :return: None
         """
 
@@ -426,12 +435,96 @@ class Analysis():
                 np.save(open(outfile, 'wb'), healpixcube)
 
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
-                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.])
+                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.], multiplier=multiplier)
 
         else:
             healpixcube = np.load(infile)
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
-                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.])
+                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.], multiplier=multiplier)
+
+    def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
+               tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3):
+        """
+        This method takes a base analysis prefix, along with an X_CO profile and generates the combined diffuse template,
+        or components of the diffuse template.
+
+        :param basedir: Base directory to read from
+        :param tag: Tag for the galprop file.  This is the part between '_54_' and '.gz'.
+        :param verbosity: 0 is quiet, >1 prints status.
+        :param multiplier: Blur each map using Gaussian kernel with sigma=FWHM_PSF*multiplier/2
+        :param bremsfrac: If None, brems is treated as independent.  Otherwise Brem normalization
+            is linked to Pi0 normalization, scaled by a factor bremsfrac.
+        :param E_subsample: Number of energy sub bins to use when integrating over each energy band.
+        """
+
+        #---------------------------------------------------------------------------------
+        # Load templates
+
+        if verbosity>0:
+            print 'Loading FITS'
+
+        comps, comps_new = {}, {}
+        comps['ics'] = pyfits.open(basedir+'/ics_isotropic_healpix_54_'+tag+'.gz')[1].data.field(0).T
+        comps['pi0'] = pyfits.open(basedir+'/pi0_decay_healpix_54_'+tag+'.gz')[1].data.field(0).T
+        comps['brem'] = pyfits.open(basedir+'/bremss_healpix_54_'+tag+'.gz')[1].data.field(0).T
+
+        energies = pyfits.open(basedir+'/bremss_healpix_54_'+tag+'.gz')[2].data.field(0)
+        nside_in = np.sqrt(comps['ics'].shape[1]/12)
+
+        # Init new templates
+        comps_new['ics'] = np.zeros((self.n_bins, 12*self.nside**2))
+        comps_new['pi0'] = np.zeros((self.n_bins, 12*self.nside**2))
+        comps_new['brem'] = np.zeros((self.n_bins, 12*self.nside**2))
+
+        #---------------------------------------------------------------------------------
+        # Now we integrate each model over the energy bins...
+        #
+        # Multiprocessing for speed. There is an async callback which applies each result to
+        # the arrays.  Not sure why RunAsync needs new thread pool for each component, but this
+        # works and decreases memory footprint.
+        def callback(result):
+            idx, comp, dat = result
+            comps_new[comp][idx] = dat
+
+        def RunAsync(component):
+            p = mp.Pool(mp.cpu_count())
+            for i_E in range(self.n_bins):
+                p.apply_async(Tools.AsyncInterpolateHealpix,
+                              [comps[component], energies, self.bin_edges[i_E], self.bin_edges[i_E+1],
+                               i_E, component, 3, self.nside],
+                              callback=callback)
+            p.close()
+            p.join()
+
+        # For each component, run the async sampling/sizing.
+        for key in comps:
+            if verbosity>0:
+                print 'Integrating and Resampling', key, 'templates...'
+            RunAsync(key)
+
+
+        #---------------------------------------------------------------------------------
+        # Now we just need to add the templates to the active template stack
+
+        # Delete previous keys for diffuse model
+        for key in ['Brems', 'Pi0', 'ICS', 'FermiDiffuse', 'Pi0_Brems']:
+            self.templateList.pop(key, None)
+
+
+        self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=True, fixNorm=False,
+                           value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 10.], multiplier=multiplier)
+
+        if bremsfrac is None:
+            self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=True, fixNorm=False,
+                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 10.], multiplier=multiplier)
+            self.AddTemplate(name='Pi0', healpixCube=comps_new['pi0'], fixSpectrum=True, fixNorm=False,
+                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 10.], multiplier=multiplier)
+
+        else:
+            self.AddTemplate(name='Pi0_Brems', healpixCube=comps_new['pi0']+bremsfrac*comps_new['brem'],
+                               fixSpectrum=True, fixNorm=False,
+                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 10.], multiplier=multiplier)
+
 
     def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50):
         """
@@ -604,6 +697,8 @@ class Analysis():
             diff_model[i_E] = self.ApplyIRF(diff_model[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1])
 
         self.psc_weights = 1./((psc/(f_psc*diff_model))**alpha_psc+1)
+
+
 
 
 
