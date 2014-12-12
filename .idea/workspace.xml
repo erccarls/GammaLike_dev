@@ -7,12 +7,6 @@
     <list default="true" id="106cb39c-4895-4b73-a64c-c5a1bad85918" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/nohup.out" afterPath="$PROJECT_DIR$/nohup.out" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Analysis.py" afterPath="$PROJECT_DIR$/Analysis.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/Compare Gas Distributions-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/Compare Gas Distributions-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Compare Gas Distributions.ipynb" afterPath="$PROJECT_DIR$/Compare Gas Distributions.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GammaLikelihood.py" afterPath="$PROJECT_DIR$/GammaLikelihood.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/RunGalprop-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/RunGalprop-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/RunGalprop.ipynb" afterPath="$PROJECT_DIR$/RunGalprop.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Template.py" afterPath="$PROJECT_DIR$/Template.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Tools.py" afterPath="$PROJECT_DIR$/Tools.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -44,23 +38,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="SourceMap.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/SourceMap.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.41044012" vertical-offset="2011" max-vertical-offset="3006">
-              <caret line="134" column="48" selection-start-line="134" selection-start-column="48" selection-end-line="134" selection-end-column="48" />
-              <folding>
-                <element signature="e#0#12#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Tools.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Tools.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Tools.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-8.903226" vertical-offset="2316" max-vertical-offset="6930">
-              <caret line="144" column="46" selection-start-line="144" selection-start-column="46" selection-end-line="144" selection-end-column="46" />
+            <state vertical-scroll-proportion="0.7090909" vertical-offset="5670" max-vertical-offset="7290">
+              <caret line="354" column="60" selection-start-line="354" selection-start-column="60" selection-end-line="354" selection-end-column="60" />
               <folding>
                 <element signature="e#365#383#0" expanded="true" />
               </folding>
@@ -71,8 +53,8 @@
       <file leaf-file-name="GammaLikelihood.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-13.935484" vertical-offset="2646" max-vertical-offset="8118">
-              <caret line="176" column="42" selection-start-line="176" selection-start-column="42" selection-end-line="176" selection-end-column="42" />
+            <state vertical-scroll-proportion="-13.935484" vertical-offset="3240" max-vertical-offset="8712">
+              <caret line="209" column="42" selection-start-line="209" selection-start-column="42" selection-end-line="209" selection-end-column="42" />
               <folding />
             </state>
           </provider>
@@ -81,8 +63,8 @@
       <file leaf-file-name="Analysis.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Analysis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-15.870968" vertical-offset="3450" max-vertical-offset="7758">
-              <caret line="219" column="26" selection-start-line="219" selection-start-column="26" selection-end-line="219" selection-end-column="26" />
+            <state vertical-scroll-proportion="-21.483871" vertical-offset="10386" max-vertical-offset="11412">
+              <caret line="614" column="0" selection-start-line="614" selection-start-column="0" selection-end-line="614" selection-end-column="0" />
               <folding>
                 <element signature="e#289#307#0" expanded="true" />
               </folding>
@@ -93,8 +75,8 @@
       <file leaf-file-name="Template.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Template.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="792">
-              <caret line="21" column="15" selection-start-line="21" selection-start-column="15" selection-end-line="21" selection-end-column="15" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="828">
+              <caret line="22" column="15" selection-start-line="22" selection-start-column="15" selection-end-line="22" selection-end-column="15" />
               <folding />
             </state>
           </provider>
@@ -123,9 +105,9 @@
         <option value="$PROJECT_DIR$/doc_index.rst" />
         <option value="$PROJECT_DIR$/Template.py" />
         <option value="$PROJECT_DIR$/GammaLikelihood.py" />
-        <option value="$PROJECT_DIR$/Tools.py" />
-        <option value="$PROJECT_DIR$/Analysis.py" />
         <option value="$PROJECT_DIR$/SourceMap.py" />
+        <option value="$PROJECT_DIR$/Analysis.py" />
+        <option value="$PROJECT_DIR$/Tools.py" />
       </list>
     </option>
   </component>
@@ -133,7 +115,7 @@
     <detection-done>true</detection-done>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="y" value="-1148" />
+    <option name="y" value="52" />
     <option name="width" value="1920" />
     <option name="height" value="1124" />
   </component>
@@ -524,8 +506,8 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="-1148" width="1920" height="1124" extended-state="6" />
-    <editor active="true" />
+    <frame x="0" y="52" width="1920" height="1124" extended-state="6" />
+    <editor active="false" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -695,48 +677,48 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Template.py">
+    <entry file="file://$PROJECT_DIR$/SourceMap.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="792">
-          <caret line="21" column="15" selection-start-line="21" selection-start-column="15" selection-end-line="21" selection-end-column="15" />
-          <folding />
+        <state vertical-scroll-proportion="0.13408393" vertical-offset="2011" max-vertical-offset="3006">
+          <caret line="119" column="44" selection-start-line="119" selection-start-column="44" selection-end-line="119" selection-end-column="44" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-13.935484" vertical-offset="2646" max-vertical-offset="8118">
-          <caret line="176" column="42" selection-start-line="176" selection-start-column="42" selection-end-line="176" selection-end-column="42" />
+        <state vertical-scroll-proportion="-13.935484" vertical-offset="3240" max-vertical-offset="8712">
+          <caret line="209" column="42" selection-start-line="209" selection-start-column="42" selection-end-line="209" selection-end-column="42" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Tools.py">
+    <entry file="file://$PROJECT_DIR$/Template.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-8.903226" vertical-offset="2316" max-vertical-offset="6930">
-          <caret line="144" column="46" selection-start-line="144" selection-start-column="46" selection-end-line="144" selection-end-column="46" />
-          <folding>
-            <element signature="e#365#383#0" expanded="true" />
-          </folding>
+        <state vertical-scroll-proportion="0.0" vertical-offset="18" max-vertical-offset="828">
+          <caret line="22" column="15" selection-start-line="22" selection-start-column="15" selection-end-line="22" selection-end-column="15" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Analysis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-15.870968" vertical-offset="3450" max-vertical-offset="7758">
-          <caret line="219" column="26" selection-start-line="219" selection-start-column="26" selection-end-line="219" selection-end-column="26" />
+        <state vertical-scroll-proportion="-21.483871" vertical-offset="10386" max-vertical-offset="11412">
+          <caret line="614" column="0" selection-start-line="614" selection-start-column="0" selection-end-line="614" selection-end-column="0" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/SourceMap.py">
+    <entry file="file://$PROJECT_DIR$/Tools.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.41044012" vertical-offset="2011" max-vertical-offset="3006">
-          <caret line="134" column="48" selection-start-line="134" selection-start-column="48" selection-end-line="134" selection-end-column="48" />
+        <state vertical-scroll-proportion="0.7090909" vertical-offset="5670" max-vertical-offset="7290">
+          <caret line="354" column="60" selection-start-line="354" selection-start-column="60" selection-end-line="354" selection-end-column="60" />
           <folding>
-            <element signature="e#0#12#0" expanded="true" />
+            <element signature="e#365#383#0" expanded="true" />
           </folding>
         </state>
       </provider>

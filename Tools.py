@@ -131,7 +131,7 @@ def ApplyPSF(hpix, E_min, E_max, PSFFile='P7Clean_Front+Back.fits', sigma=.1, sm
         return healpy.sphtfunc.alm2map(alm, nside=nside, sigma=np.deg2rad(sigma), verbose=False)
       
 
-def ApplyGaussianPSF(hpix, E_min, E_max, psfFile):
+def ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=1.):
     """
     Finds the spectral weighted average PSF, determines the FWHM and blurs by Gaussian kernel of that size.
 
@@ -139,6 +139,7 @@ def ApplyGaussianPSF(hpix, E_min, E_max, psfFile):
     :param E_min: Minimum energy for spectral weighting
     :param E_max: Max energy for spectral weighting
     :param psfFile: Output of gtpsf
+    :param multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
 
     :return hpix array: returns the input hpix with PSF convolved.
     """
@@ -294,7 +295,7 @@ def SampleCartesianMap(fits, E_min, E_max, nside, E_bins=5):
     :returns: Healpix sampling of the input cartesian data cube with units in (s cm^2)^-1
     """
     hdu = pyfits.open(fits)
-
+    # TODO: Check sensitivity of fitting results to number of sub-bins (E_bins). Do we need more integration accuracy?
     # Define the grid spacings
     energies = np.log10([e[0] for e in hdu[1].data])
     lats = np.linspace(-90, 90, hdu[0].header['NAXIS2'])
@@ -321,6 +322,48 @@ def SampleCartesianMap(fits, E_min, E_max, nside, E_bins=5):
     return master*healpy.pixelfunc.nside2pixarea(nside)
 
 
+def InterpolateHealpix(healpixcube, energies,  E_min, E_max, E_bins=3, nside_out=None):
+    """
+    Integrate a healpix cube energy range, returns a spectrally weighted average
+    in units of (s cm^2)^-1.  Just need to multiply by effective area and PSF in order to obtain count map.
+
+    :param    healpixcube: a healpixcube with first dimension energy and second dimension the healpix index.
+    :param    energies: a list of energies for the healpix cube in MeV.
+    :param    E_min: Min energy in MeV
+    :param    E_max: Max energy in MeV
+    :param    E_bins: Number of subbins for integration.
+    :param    nside_out: if not None, can specify a new nside for up/downsampling.
+    :returns: Spectral subsampling of the input cartesian data cube with units in (s cm^2)^-1
+    """
+
+    nside = np.sqrt(healpixcube.shape[1]/12)  # Get nside based on shape
+
+    # Define the grid spacings
+    energies = np.log10(energies)
+
+    # Build the interpolator
+    rgi = RegularGridInterpolator((energies, np.arange(12*nside**2)), healpixcube, method='linear',
+                                  bounds_error=False, fill_value=np.float32(0.))
+
+    # Init the healpix grid and compute the energy bins.
+    master = np.zeros(12*nside**2)
+    bin_edges = np.logspace(np.log10(E_min), np.log10(E_max), E_bins+1)
+
+    # Iterate over the sub-bins to return the integrated spectrum.
+    for i_E in range(len(bin_edges)-1):
+        central_energy = 10.**(0.5*(np.log10(bin_edges[i_E]) + np.log10(bin_edges[i_E+1])))
+        bin_width = bin_edges[i_E+1]-bin_edges[i_E]
+        # Units of diffuse model are (sr s cm^2 MeV)^-1
+        master += rgi((np.log10(central_energy), np.arange(12*nside**2)))*bin_width
+    if (nside_out is None) or (nside == nside_out):
+        # Units of returned model are (s cm^2)^-1
+        return master*healpy.pixelfunc.nside2pixarea(nside)
+    else:
+        return ResizeHealpix(master*healpy.pixelfunc.nside2pixarea(nside), nside_out=nside_out, average=False)
+
+def AsyncInterpolateHealpix(healpixcube, energies,  E_min, E_max, index, comp, E_bins=3, nside_out=None,):
+    return index, comp, InterpolateHealpix(healpixcube, energies,  E_min, E_max, E_bins=E_bins, nside_out=nside_out)
+
 def galprop2numpy(fits):
     """
     Converts the galprop healpix fits output (which is in table form) into a numpy array.
@@ -337,6 +380,25 @@ def galprop2numpy(fits):
     for i in range(len(dat[0])):
         healpixcube[i] = dat.field(i)
     return energies, healpixcube
+
+
+def ResizeHealpix(map_in, nside_out, average=True):
+    """
+    Change nside of a healpix array.
+
+    :param map_in: healpix array to resample.
+    :param nside_out: new nside parameter.
+    :param average: if True, the pixels are averaged for downsampling,
+        otherwise pixel values are divided among the subpixels (summed for upsampling)
+    """
+    if average:
+        return healpy.pixelfunc.ud_grade(map_in=map_in, nside_out=nside_out, power=0)  # Keep density invariant
+    else:
+        return healpy.pixelfunc.ud_grade(map_in, nside_out, power=-2)  # Keep sum invariant
+
+
+
+
 
 #----------------------------------------------------------------------------
 # Testing for ApplyPSF
