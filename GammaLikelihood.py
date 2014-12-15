@@ -91,7 +91,7 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
 
             if t.valueUnc is not None:
                 for Ebin in range(t.healpixCube.shape[0]):
-                    extConstraint += '('+key + '-1)/' + str(t.valueUnc[Ebin]) + '+'
+                    extConstraint += '(('+key + '-1)/' + str(t.valueUnc[Ebin]) + ')**2+'
 
             # For the second minimizer
             x0.append(t.value)
@@ -123,7 +123,7 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
                     else:
                         bounds.append(t.limits)
                 if t.valueUnc is not None:
-                    extConstraint += '('+key + '_' + str(Ebin) + '-1)/' + str(t.valueUnc[Ebin]) + '+'
+                    extConstraint += '(('+key + '_' + str(Ebin) + '-1)/' + str(t.valueUnc[Ebin]) + ')**2+'
 
                 # Currently no support for limits on each bin normalization
                 kwargs['limit_'+key + '_' + str(Ebin)] = t.limits
@@ -220,8 +220,6 @@ class like():
         return neg_loglikelihood + chi2_ext/2.
         """)
     f.close()
-
-    print f.name
     #---------------------------------------------------------------------------
     # Now load the source 
     foo = imp.load_source('tmplike', f.name)
