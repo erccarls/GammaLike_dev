@@ -392,7 +392,7 @@ def ResizeHealpix(map_in, nside_out, average=True):
         otherwise pixel values are divided among the subpixels (summed for upsampling)
     """
     if average:
-        return healpy.pixelfunc.ud_grade(map_in=map_in, nside_out=nside_out, power=0)  # Keep density invariant
+        return healpy.pixelfunc.ud_grade(map_in, nside_out, power=0)  # Keep density invariant
     else:
         return healpy.pixelfunc.ud_grade(map_in, nside_out, power=-2)  # Keep sum invariant
 
