@@ -32,8 +32,8 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
 
     # Check that the input data all has the correct dimensionality.
     shape = analysis.binned_data.shape
-    for key in analysis.templateList:
-        if analysis.templateList[key].healpixCube.shape != shape:
+    for key, t in analysis.templateList.items():
+        if t.healpixCube.shape != shape:
             raise Exception("Input template " + key + " does not match the shape of the binned data.")
 
     if analysis.psc_weights is None:
@@ -44,8 +44,7 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     start = time.time()
     mask_idx = np.where(analysis.mask != 0)[0]
     # Iterate through templates and apply masking
-    for key in analysis.templateList:
-        t = analysis.templateList[key]
+    for key, t in analysis.templateList.items():
         tmpcube = np.zeros(shape=(t.healpixCube.shape[0], len(mask_idx)))
         for Ebin in range(t.healpixCube.shape[0]):
             tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx]
@@ -65,15 +64,19 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     # code. 
     start = time.time()
     model, args = ['        model['+str(i)+']=' for i in range(analysis.binned_data.shape[0])], ''
+
+    # External constraint
+    extConstraint ='        chi2_ext='
+
     # pyminut initial step size and print level
     kwargs = {'errordef': 0.5, 'print_level': print_level}
 
     # This map keeps track of the arguments order since scipy minimizer returns values in tuple not dict.
-    argMap = []
+    argMap, x0, bounds = [], [], []
+
 
     # Iterate over the input templates and add each template to the fitting functions args.
-    for key in analysis.templateList: 
-        t = analysis.templateList[key]
+    for key, t in analysis.templateList.items():
         if t.fixSpectrum:
             # Just add an overall normalization parameter and the same for the model.
             args += key + ','
@@ -86,6 +89,17 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
             kwargs['error_'+key] = .25
             kwargs['fix_'+key] = t.fixNorm
 
+            if t.valueUnc is not None:
+                for Ebin in range(t.healpixCube.shape[0]):
+                    extConstraint += '('+key + '-1)/' + str(t.valueUnc[Ebin]) + '+'
+
+            # For the second minimizer
+            x0.append(t.value)
+            if t.fixNorm:
+                bounds.append([t.value, t.value])
+            else:
+                bounds.append(t.limits)
+
         else:
             # Add a normalization component for each spectral bin in each template.
             for Ebin in range(t.healpixCube.shape[0]):
@@ -96,14 +110,35 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
                 # If we have an array or list of initial values....
                 if type(t.value) == type([]) or type(t.value) == type(np.array([])):
                     kwargs[key + '_' + str(Ebin)] = t.value[Ebin]  # default initial value
+                    x0.append(t.value[Ebin])
+                    if t.fixNorm:
+                        bounds.append([t.value[Ebin], t.value[Ebin]])
+                    else:
+                        bounds.append(t.limits)
                 else:
                     kwargs[key + '_' + str(Ebin)] = t.value  # default initial value
+                    x0.append(t.value)
+                    if t.fixNorm:
+                        bounds.append([t.value, t.value])
+                    else:
+                        bounds.append(t.limits)
+                if t.valueUnc is not None:
+                    extConstraint += '('+key + '_' + str(Ebin) + '-1)/' + str(t.valueUnc[Ebin]) + '+'
+
                 # Currently no support for limits on each bin normalization
                 kwargs['limit_'+key + '_' + str(Ebin)] = t.limits
                 # If we are supposed to fix the values, then fix them.
                 kwargs['fix_'+key + '_' + str(Ebin)] = t.fixNorm
+
+
+
+
     # remove the trailing '+' sign and add newline. 
     model = [model[i][:-1] + '\n' for i in range(analysis.binned_data.shape[0])]
+    extConstraint = extConstraint[:-1]
+    if extConstraint is '        chi2_ext':
+        extConstraint = '        chi2_ext=0'
+
     # Combine the individual strings into bins.
     master_model = ''
     for m in model:
@@ -145,8 +180,9 @@ class like():
         model = np.zeros(shape=self.templateList[self.templateList.keys()[0]].healpixCubeMasked.shape)
         # sum the models 
 """ + master_model +"""
+""" + extConstraint + """
         
-        
+
         #------------------------------------------------
         # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
         if self.use_cuda == False:
@@ -162,13 +198,14 @@ class like():
         #if self.ncall%500==0: print self.ncall, neg_loglikelihood
         #self.ncall+=1
 
-        return neg_loglikelihood
+        return neg_loglikelihood + chi2_ext/2.
         
         
     def f2(self,x0):
         """+args+""" = x0
         model = np.zeros(shape=self.data.shape)
 """ + master_model +"""
+""" + extConstraint + """
     
         # gpu mode
         if self.use_cuda:
@@ -180,10 +217,11 @@ class like():
         else:
             neg_loglikelihood = np.sum(self.psc_weights*(-self.flat_data*np.log(model)+model))
                 
-        return neg_loglikelihood
+        return neg_loglikelihood + chi2_ext/2.
         """)
     f.close()
 
+    print f.name
     #---------------------------------------------------------------------------
     # Now load the source 
     foo = imp.load_source('tmplike', f.name)
@@ -200,25 +238,19 @@ class like():
 
     # Init migrad 
     m = Minuit(like.f, **kwargs)
-    m.tol = 1000000 # TODO: why does m.tol need to be so big to converge when errors are very small????
+    m.tol = 100000  # TODO: why does m.tol need to be so big to converge when errors are very small????
     #m.migrad(ncall=200000, precision=1e-15)
-    m.migrad(ncall=200000)
+    if not start_fresh:
+        m.migrad(ncall=1e6)
 
     #m.minos(maxcall=10000,sigma=2.)
 
     if print_level > 0:
         print "Migrad completed fitting", "{:10.2e}".format(time.time()-start), 's'
 
-
-    x0, bounds = [], []
-
-    for key in argMap:
-        if start_fresh:
-            # TODO: This should read input values, but start_fresh=True is not likely to be used much...
-            x0.append(1.)
-        else:
-            x0.append(m.values[key])
-        bounds.append(m.fitarg['limit_'+key])
+    for i, key in enumerate(argMap):
+        if not start_fresh:
+            x0[i] = m.values[key]
 
     if use_basinhopping:
         if print_level > 0:
@@ -227,9 +259,18 @@ class like():
             disp = False
         res = basinhopping(like.f2, x0, niter=20000, disp=disp,
                            stepsize=.1, minimizer_kwargs={'bounds': bounds}, niter_success=niter_success)
+
+        # Can also try pswarm method.
+        #lb, ub = np.array(bounds)[:,0], np.array(bounds)[:,1]
+
+        #from openopt import GLP
+        #p = GLP(like.f2, startpoint=x0, lb=np.zeros(len(x0)), ub=np.ones(len(x0)), maxIter=niter_success,  maxFunEvals=1e6)
+        #res = p.minimize('pswarm', iprint=3, iterObjFunTextFormat='%0.8e')
+
         # Generate a dict of the best fit values against the keys like iMinuit object has.
         res_vals = {}
         for i, key in enumerate(argMap):
+            #res_vals[key] = res.xf[i]
             res_vals[key] = res.x[i]
 
         if print_level > 0:

@@ -20,7 +20,7 @@ class Template():
         :param value:       Initial value for the template normalization, or a vector of values for each spectral bin.
         :param sourceClass: Type of template, used for later processing.  Can be 'ISO' (isotropic), 'PSC' (point source),
                         'GEN' (General).
-        :param ValueUnc:    similar format to value, used to apply external constraints on the
+        :param valueUnc:    similar format to value, used to apply external constraints on the
         '''
 
         # Currently only type that matters is PSC as it is used for spectral weighting. 
@@ -32,7 +32,6 @@ class Template():
         self.value = value
         self.sourceClass = sourceClass
         self.valueUnc = valueUnc
-        self.fitVal = None
 
         #if fixNorm:
         #    self.limits = [value, value]

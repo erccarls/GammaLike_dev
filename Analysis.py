@@ -268,7 +268,7 @@ class Analysis():
 
 
     def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0, 1e5], value=1, ApplyIRF=True,
-                    sourceClass='GEN', multiplier=1.):
+                    sourceClass='GEN', multiplier=1., valueUnc=None):
         """
         Add Template to the template list.
 
@@ -299,7 +299,8 @@ class Analysis():
                                                      multiplier=multiplier)
 
         # Instantiate the template object. 
-        template = Template.Template(healpixCube.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass)
+        template = Template.Template(healpixCube.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass,
+                                     valueUnc)
         # Add the instance to the master template list.
         self.templateList[name] = template
 
@@ -311,7 +312,7 @@ class Analysis():
         """
         self.templateList.pop(name, None)
 
-    def AddIsotropicTemplate(self, isofile='./IGRB_ackerman_2014_modA.dat', fixNorm=True):
+    def AddIsotropicTemplate(self, isofile='./IGRB_ackerman_2014_modA.dat', fixNorm=False):
         """
         Generates an isotropic template from a spectral file and add it to the current templateList
 
@@ -324,21 +325,28 @@ class Analysis():
         # Build a power law interpolator
         fluxInterp = lambda x: np.exp(np.interp(np.log(x), np.log(E), np.log(flux)))
         fluxUncInterp = lambda x: np.exp(np.interp(np.log(x), np.log(E), np.log(fluxUnc)))
-        
+
         # Units are in ph/cm^2/s/MeV/sr
         healpixCube = np.ones(shape=(len(self.bin_edges)-1, 12*self.nside**2))
         # Solid Angle of each pixel
         solidAngle = 4*np.pi/(12*self.nside**2)
-        # Find 
-        from scipy.integrate import quad
+        # Find
+        valueUnc = []
         for i_E in range(len(self.bin_edges)-1):
             # multiply by integral(flux *dE )*solidangle
-            healpixCube[i_E] *= quad(fluxInterp, self.bin_edges[i_E], self.bin_edges[i_E+1])[0]*solidAngle
-        
+            counts = quad(fluxInterp, self.bin_edges[i_E], self.bin_edges[i_E+1])[0]*solidAngle
+            healpixCube[i_E] *= counts
+            counts_unc = quad(fluxUncInterp, self.bin_edges[i_E], self.bin_edges[i_E+1])[0]*solidAngle
+            if counts != 0:
+                val_unc = counts_unc/counts  # fractional change allowed in value
+            else:
+                val_unc = 1e20  # if the flux is zero, just make this bin unimportant by setting the error bars to inf.
+            valueUnc.append(val_unc)
+
         # Add the template to the list. 
         # IRFs are applied during add template.  This multiplies by cm^2 s
         self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=True,
-                        fixNorm=fixNorm, limits=[0, 5.0], value=1, ApplyIRF=True, sourceClass='ISO')
+                        fixNorm=fixNorm, limits=[0, 5.0], value=1, ApplyIRF=True, sourceClass='ISO', valueUnc=valueUnc)
 
         # TODO: NEED TO DEAL WITH UNCERTAINTY VECTOR in likelihood fit.
 
@@ -647,37 +655,50 @@ class Analysis():
         :param template_file: Requires file 'bubble_templates_diskcut30.0.fits'
             style file (from Su & Finkbeiner) with an extension table with a NAME column containing "Whole bubble"
             and a TEMPLATE column with an order 8 healpix array.
-        :param spec_file: filename containing two columns (no header).  First col is energy in MeV, second is
-            dN/dE in units (s cm^2 sr MeV)^-1.
+        :param spec_file: filename containing three columns (no header).  First col is energy in MeV, second is
+            dN/dE in units (s cm^2 sr MeV)^-1 third is the uncertainty in dN/dE in (s cm^2 sr MeV)^-1.
         :param fixSpectrum: If True, the spectrum is not allowed to float.
         """
-
-        # TODO CURRENTLY SPATIAL BINNING OTHER THAN nside=256 not supported. Should add down/upsampling
 
         # Load the template and spectrum
         hdu = pyfits.open(template_file)
         bub_idx = np.where(hdu[1].data['NAME'] == 'Whole bubble')
         bubble = hdu[1].data['TEMPLATE'][bub_idx][0]
-        energy, dnde = np.genfromtxt(spec_file).T
+
+        # Resize template if need be.
+        nside_in = np.sqrt(bubble.shape[0]/12)
+        if nside_in is not self.nside:
+            Tools.ResizeHealpix(bubble, self.nside, average=True)
+
+        energy, dnde, dnde_unc = np.genfromtxt(spec_file).T
         spec = lambda e: np.interp(e, energy, dnde)
+        spec_unc = lambda e: np.interp(e, energy, dnde_unc)
+
         # Get lat/lon for each pixel
         l,b = Tools.hpix2ang(np.arange(12*self.nside**2))
 
         healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
-
+        valueUnc = []
         for i_E in range(self.n_bins):
             # Determine the counts in each bin.
             e1, e2 = self.bin_edges[i_E], self.bin_edges[i_E+1]
             # integrate spectrum over energy band
             flux = quad(spec, e1, e2)[0]
+            flux_unc = quad(spec_unc, e1, e2)[0]
+
+            if flux != 0:
+                val_unc = flux_unc/flux  # fractional change allowed in value
+            else:
+                val_unc = 1e20  # if the flux is zero, just make this bin unimportant by setting the error bars to inf.
+            valueUnc.append(val_unc)
+
             # Multiply mask by counts.
             healpixcube[i_E] = bubble*flux*(healpy.nside2pixarea(self.nside))
 
         # Now each bin is in ph cm^-2 s^-1.  Apply IRF takes care of the rest.
         self.AddTemplate(healpixCube=healpixcube, name='Bubbles', fixSpectrum=fixSpectrum,
-                         fixNorm=False, limits=[0, 1e2], value=1, ApplyIRF=True,
-                         sourceClass='GEN')
-
+                         fixNorm=False, limits=[0., 5.], value=1., ApplyIRF=True,
+                         sourceClass='GEN', valueUnc=valueUnc)
 
     def CalculatePixelWeights(self, diffuse_model, psc_model, alpha_psc=5., f_psc=0.1):
         """
