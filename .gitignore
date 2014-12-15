@@ -1,2 +1,4 @@
 *.fits
 *.pickle
+*.npy
+nohup.out
