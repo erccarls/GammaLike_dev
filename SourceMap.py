@@ -37,7 +37,7 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
     # Load FGL cat
     fgl_data = pyfits.open(fglpath)[1].data
     # Init the master point source template
-    pscmap = np.zeros(shape=(len(bin_edges)-1, 12*nside**2))
+    pscmap = np.zeros(shape=(len(bin_edges)-1, 12*nside**2)).astype(np.float32)
 
     # Determine which sources are inside the spatial window.
     idx_all = np.where((fgl_data['GLAT'] < b_range[1]) & (fgl_data['GLAT'] > b_range[0])
@@ -113,7 +113,7 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
             avgPSFInterp = lambda r: np.interp(r, thetas, avgPSF)
 
             # Form a cartesian array for this PSF which will be mapped to the healpix grid
-            cartMap = np.zeros(shape=(size, size))
+            cartMap = np.zeros(shape=(size, size)).astype(np.float32)
 
             # Scan over latitudes and fill in PSF value
             for i_lat, lat in enumerate(lats):
@@ -154,7 +154,7 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
             print '\rGenerating Point Source Map:', '%2.2f' % (np.float(i_idx)/len(idx_all)*100.), '%',
             sys.stdout.flush()
     if filename is not None:
-        np.save(open(filename, 'wb'), pscmap)
+        np.save(open(filename, 'wb'), pscmap.astype(np.float32))
     return pscmap
 
 

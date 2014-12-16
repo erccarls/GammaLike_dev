@@ -122,7 +122,7 @@ class Analysis():
                 # count the number of events in each healpix pixel.
                 np.add.at(self.binned_data[i], pix, 1.)
             if outfile is not None:
-                np.save(open(outfile, 'wb'), self.binned_data)
+                np.save(open(outfile, 'wb'), self.binned_data.astype(np.float32))
         else:
             self.binned_data = np.load(infile)
 
@@ -458,16 +458,17 @@ class Analysis():
                 healpixcube[i] = Tools.SampleCartesianMap(fits=diffuse_path,
                                                           E_min=self.bin_edges[i], E_max=self.bin_edges[i+1],
                                                           nside=self.nside)
-            if outfile is not None:
-                np.save(open(outfile, 'wb'), healpixcube)
 
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
                              value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.], multiplier=multiplier)
+
+            if outfile is not None:
+                np.save(open(outfile, 'wb'), self.templateList['FermiDiffuse'].healpixCube)
 
         else:
             healpixcube = np.load(infile)
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
-                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.], multiplier=multiplier)
+                             value=1, ApplyIRF=False, sourceClass='GEN', limits=[0, 5.], multiplier=multiplier)
 
     def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
                tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3):
@@ -732,19 +733,9 @@ class Analysis():
 
         diff_model = np.load(diffuse_model)
         psc = np.load(psc_model)
-        
-        # Apply the PSF to the diffuse model before calculating weights.
-        for i_E in range(len(self.bin_edges)-1):
-            diff_model[i_E] = self.ApplyIRF(diff_model[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1])
 
         self.psc_weights = 1./((psc/(f_psc*diff_model))**alpha_psc+1)
 
-
-
-
-
-    # TODO: ADD INTERFACES TO GALPROP MAPS
-    # TODO: Add calculate point source map weights for fitting.
 
 
 
