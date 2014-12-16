@@ -23,10 +23,11 @@ class Analysis():
     #--------------------------------------------------------------------
 
     def __init__(self, E_min=5e2, E_max=5e5, nside=256, gamma=1.45, n_bins=20, prefix_bins=[300, 350, 400, 450, 500],
-                    tag='P7REP_CLEAN_V15_test', basepath='/data/GCE_sys/',
+                    tag='P7REP_CLEAN_V15_calore', basepath='/data/GCE_sys/',
                     phfile_raw='/data/fermi_data_1-8-14/phfile.txt',
                     scfile='/data/fermi_data_1-8-14/lat_spacecraft_merged.fits',
-                    evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v08.fit'):
+                    evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v08.fit',
+                    gtfilter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52"):
         """
         :param    E_min:        Min energy for recursive spectral binning
         :param    E_max:        Max energt for recursive spectral binning
@@ -43,6 +44,7 @@ class Analysis():
         :param    zmax:         zenith cut
         :param    irf:          Fermi irf name
         :param    fglpath:      Path to the 2FGL fits file
+        :param    gtfilter:       Filter string to pass to gtselect.
         """
 
         self.E_min = E_min
@@ -60,11 +62,13 @@ class Analysis():
         self.irf = irf
         self.bin_edges = 0
         self.bin_edges = copy.copy(prefix_bins)
+        self.gtfilter = gtfilter
 
         self.phfile = basepath + '/photons_merged_cut_'+str(tag)+'.fits'
         self.psfFile = basepath + '/gtpsf_' + str(tag)+'.fits'
         self.expCube = basepath + '/gtexpcube2_' + str(tag)+'.fits'
         self.fglpath = fglpath
+
         
         # Currently Unassigned 
         self.binned_data = None  # master list of bin counts. 1st index is spectral, 2nd is pixel_number
@@ -233,12 +237,12 @@ class Analysis():
         if pscmap is None:
             pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
 
-        reload(SourceMap)
-        total_map = SourceMap.GenSourceMap(self.bin_edges, l_range=(-180, 180), b_range=(-90, 90),
+        # TODO: Adaptively set l_range and b_range based on current mask? At least make entire map.
+        total_map = SourceMap.GenSourceMap(self.bin_edges, l_range=(-30, 30), b_range=(-30, 30),
                                            fglpath=self.fglpath,
                                            expcube=self.expCube,
                                            psffile=self.psfFile,
-                                           maxpsf = 10.,
+                                           maxpsf = 7.5,
                                            res=0.125,
                                            nside=self.nside,
                                            filename=pscmap, onlyidx=onlyidx)
@@ -401,7 +405,7 @@ class Analysis():
         return tmp
 
 
-    def GenFermiData(self, scriptname):
+    def GenFermiData(self, runscript=False):
         """
         Given the analysis properties, this will generate a script for the fermi data.
 
@@ -409,14 +413,29 @@ class Analysis():
 
         """
 
-        scriptname = self.basepath + '/' +  scriptname
-
+        scriptname = '/GenFermiData_' + self.tag + '_.sh'
         print "Run this script to generate the required fermitools files for this analysis."
-        print "The script can be found at", scriptname
+        print "The script can be found at", self.basepath + scriptname
 
-        print GenFermiData.GenDataScipt(self.tag, self.basepath, self.bin_edges, scriptname, self.phfile_raw,
-                                        self.scfile, self.evclass, self.convtype,  self.zmax, self.E_min, self.E_max,
-                                        self.irf)
+        GenFermiData.GenDataScipt(self.tag, self.basepath, self.bin_edges, scriptname, self.phfile_raw,
+                                  self.scfile, self.evclass, self.convtype,  self.zmax, min(self.bin_edges),
+                                  max(self.bin_edges), self.irf, self.gtfilter)
+        if runscript:
+            import sys
+            import subprocess
+            p = subprocess.Popen([self.basepath + scriptname, ], stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, shell=True)
+            # Grab stdout line by line as it becomes available.  This will loop until p terminates.
+            while p.poll() is None:
+                l = p.stdout.readline()  # This blocks until it receives a newline.
+                sys.stdout.flush()
+                print l.rstrip('\n')
+            # When the subprocess terminates there might be unconsumed output
+            # that still needs to be processed.
+            print p.stdout.read()
+            print p.stderr.read()
+
+
 
     def AddFermiDiffuseModel(self, diffuse_path, infile=None, outfile=None, multiplier=1.):
         """
@@ -631,6 +650,7 @@ class Analysis():
                         * healpy.pixelfunc.nside2pixarea(self.nside))
             # if value is not a vector
             if np.ndim(t.value) == 0:
+
                 stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)
                               / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
                 count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value
@@ -689,7 +709,7 @@ class Analysis():
             if flux != 0:
                 val_unc = flux_unc/flux  # fractional change allowed in value
             else:
-                val_unc = 1e20  # if the flux is zero, just make this bin unimportant by setting the error bars to inf.
+                val_unc = 1e20  # if the flux is zero, just make this bin unimportant by setting the error barto inf.
             valueUnc.append(val_unc)
 
             # Multiply mask by counts.

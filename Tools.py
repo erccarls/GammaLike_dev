@@ -182,10 +182,13 @@ def GetExpMap(E_min, E_max, l, b, expcube):
         # average_E = (1-alpha)/(alpha-2)*(E_min**(2-alpha)-E_max**(2-alpha))/(E_min**(1-alpha)-E_max**(1-alpha))
 
     # Find the energy bin in the expcube file
-    Ebin = int(np.round((np.log(average_E)-expcubehdu[0].header['CRVAL3'])/expcubehdu[0].header['CDELT3']))
+    Ebin = int(np.round((np.log(average_E)-expcubehdu[0].header['CRVAL3'])/expcubehdu[0].header['CDELT3'])
+               +expcubehdu[0].header['CRPIX3']) # fits files are 1 indexed, numpy is zero indexed.
+
     if Ebin >= expcubehdu[0].header['NAXIS3']:
         Ebin = expcubehdu[0].header['NAXIS3']-1
 
+    #print E_min, E_max, Ebin, average_E, expcubehdu[0].data.shape
     # convert 0-360 to -180-180
     l,b = np.array(l), np.array(b)
     if l.ndim == 0: 
