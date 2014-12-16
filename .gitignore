@@ -2,3 +2,6 @@
 *.pickle
 *.npy
 nohup.out
+*pyc
+.idea
+.ipynb_checkpoints
