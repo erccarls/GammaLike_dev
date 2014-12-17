@@ -113,9 +113,9 @@ def ApplyPSF(hpix, E_min, E_max, PSFFile='P7Clean_Front+Back.fits', sigma=.1, sm
     harmonics -> re-weight the alm coefficients according to the PSF -> returns the inverse transform
     **WARNING: DO NOT USE. THIS METHOD IS NOT YET COMPLETED**
     """
-
+    # TODO: ApplyPSF: This could probably be made to work by upsampling, applypsf, and then downsampling.
     # Spherical Harmonic transform 
-    alm  = healpy.sphtfunc.map2alm(hpix)
+    alm = healpy.sphtfunc.map2alm(hpix)
     
     # get maximum value of l 
     l_max = healpy.sphtfunc.Alm.getlmax(len(alm))

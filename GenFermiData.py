@@ -1,6 +1,7 @@
 import os
+import numpy as np
 
-def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=2, convtype=-1,  zmax=100, emin=200,
+def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3, convtype=-1,  zmax=100, emin=200,
                  emax=6e5,
                  irf='P7REP_CLEAN_V15', filter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52"):
     '''
@@ -17,11 +18,25 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=2
         runstring
     '''
 
+    # Perhaps catch a common mistake....
+    if evclass == 2 and 'SOURCE' not in irf:
+        print 'WARNING: Possible mismatch between irf and evclass. Check Carefully.'
+    elif evclass == 3 and 'CLEAN' not in irf:
+        print 'WARNING: Possible mismatch between irf and evclass. Check Carefully.'
+
+
     # Generate the binning file definition for fermitools
-    f = open(basepath + '/bin_edges_'+str(tag)+'.dat', 'wb')
-    for i in range(len(bin_edges)-1):
-        f.write(str(bin_edges[i]) + " " + str(bin_edges[i+1])+"\n")
-    f.close()
+    # This should be done for logspaced bins with high energy resolution.
+    with open(basepath + '/bin_edges_'+str(tag)+'.dat', 'wb') as f:
+        # This is for custom binning.
+        # for i in range(len(bin_edges)-1):
+        #     f.write(str(bin_edges[i]) + " " + str(bin_edges[i+1])+"\n")
+
+        # We just care about finely log-spaced binning since exposure maps are later integrated over each bin.
+        E = np.logspace(np.log10(np.min(bin_edges)), np.log10(np.max(bin_edges)), 76)
+        for i in range(len(E)-1):
+            f.write(str(E[i]) + " " + str(E[i+1])+"\n")
+
 
     runstring = '''
     cd '''+ basepath + '''
@@ -43,10 +58,10 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=2
 
     echo "running gtltcube"
     #gtltcube evfile=photons_merged_cut_'''+str(tag)+'''.fits scfile='''+str(scfile)+'''\
-    #    outfile="cube_'''+str(tag)+'''.fits" dcostheta=0.25 binsz=2 zmax='''+str(zmax)+''' clobber=True
+    #    outfile="cube_'''+str(tag)+'''.fits" dcostheta=0.5 binsz=2 zmax='''+str(zmax)+''' clobber=True
 
     gtltcube evfile=photons_merged_cut_'''+str(tag)+'''.fits scfile='''+str(scfile)+'''\
-        outfile="cube_'''+str(tag)+'''.fits" dcostheta=0.25 binsz=2 zmin=0 zmax=180 clobber=True
+        outfile="cube_'''+str(tag)+'''.fits" dcostheta=0.5 binsz=2 zmin=0 zmax=180 clobber=True
 
     # make ebin file
     echo "running gtbindef"
