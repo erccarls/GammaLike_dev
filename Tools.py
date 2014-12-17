@@ -171,57 +171,27 @@ def GetExpMap(E_min, E_max, l, b, expcube):
     if expcube != currentExpCube:
         expcubehdu = pyfits.open(expcube)
 
+    energies = np.log10([e[0] for e in expcubehdu[1].data])
+    lats = np.linspace(-90, 90, expcubehdu[0].header['NAXIS2'])
+    lons = np.linspace(-180, 180, expcubehdu[0].header['NAXIS1'])
+    reversed_arr = np.swapaxes(np.swapaxes(expcubehdu[0].data, 0, 2)[::-1], 0, 2)
 
-    
+    # Build the interpolator
+    rgi = RegularGridInterpolator((energies, lats, lons), reversed_arr, method='linear',
+                                  bounds_error=False, fill_value=np.float32(0.))
+    average_E = 10**(0.5*(np.log10(E_min)+np.log10(E_max)))
 
-
-    # Find the average photon energy over the band
-    alpha = GetSpectralIndex(E_min, E_max)
-    if E_min == E_max:
-        average_E = E_min
-    else:
-        average_E = 10**(0.5*(np.log10(E_min)+np.log10(E_max)))
-        # average_E = (1-alpha)/(alpha-2)*(E_min**(2-alpha)-E_max**(2-alpha))/(E_min**(1-alpha)-E_max**(1-alpha))
-
-
-
-    # Find the energy bin in the expcube file
-    Ebin = int(np.round((np.log(average_E)-expcubehdu[0].header['CRVAL3'])/expcubehdu[0].header['CDELT3'])
-               +expcubehdu[0].header['CRPIX3']) # fits files are 1 indexed, numpy is zero indexed.
-
-    if Ebin >= expcubehdu[0].header['NAXIS3']:
-        Ebin = expcubehdu[0].header['NAXIS3']-1
-
-    #print E_min, E_max, Ebin, average_E, expcubehdu[0].data.shape
     # convert 0-360 to -180-180
-    l,b = np.array(l), np.array(b)
-    if l.ndim == 0: 
+    l, b = np.array(l), np.array(b)
+    if l.ndim == 0:
         if l > 180:
             l -= 360
     else:
         idx = np.where(l > 180)[0]
         l[idx] -= 360.
 
+    return rgi((np.log10(average_E), b, l))
 
-    # Find lat/lon bin on expmap 
-    l_bin = np.round((l-expcubehdu[0].header['CRVAL1'])/expcubehdu[0].header['CDELT1']
-                     + expcubehdu[0].header['CRPIX1']).astype(np.int32)
-    b_bin = np.round((b-expcubehdu[0].header['CRVAL2'])/expcubehdu[0].header['CDELT2']
-                     + expcubehdu[0].header['CRPIX2']).astype(np.int32)
-    # Check for points on the border
-    if np.ndim(l_bin) > 0:
-        idx_l = np.where(l_bin == expcubehdu[0].header['NAXIS1'])[0]
-        idx_b = np.where(b_bin == expcubehdu[0].header['NAXIS2'])[0]
-        l_bin[idx_l] = l_bin[idx_l]-1
-        b_bin[idx_b] = b_bin[idx_b]-1
-    else:
-        if l_bin == expcubehdu[0].header['NAXIS1']:
-            l_bin -= 1
-        if b_bin == expcubehdu[0].header['NAXIS2']:
-            b_bin -= 1
-
-    # Return the exposure map in cm*s
-    return expcubehdu[0].data[Ebin, b_bin, l_bin]
 
 
 def ApplyIRF( hpix, E_min, E_max, psfFile , expCube ,noPSF=False, noExp=False, multiplier=1.):

@@ -157,29 +157,6 @@ class Analysis():
             self.mask = mask
         return mask
 
-    # def ApplyIRF(self, hpix, E_min, E_max, noPSF=False, noExp=False, multiplier=1.):
-    #     """
-    #     Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
-    #     These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
-    #     diffuse model.
-    #
-    #     :param    hpix: A healpix array.
-    #     :param    E_min: low energy boundary
-    #     :param    E_max: high energy boundary
-    #     :param    noPSF: Do not apply the PSF
-    #     :param    noExp: Do not apply the effective exposure
-    #     :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
-    #     """
-    #     # Apply the PSF.  This is automatically spectrally weighted
-    #     if noPSF is False:
-    #         hpix = Tools.ApplyGaussianPSF(hpix, E_min, E_max, self.psfFile, multiplier=multiplier)
-    #     # Get l,b for each healpix pixel
-    #     l, b = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
-    #     # For each healpix pixel, multiply by the exposure.
-    #     if noExp is False:
-    #         hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expCube,)
-    #     return hpix
-
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
                                     fixSpectrum=False, fixNorm=False, limits=[0., 10.], value=1,):
         """
