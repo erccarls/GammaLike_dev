@@ -121,7 +121,7 @@ def ApplyPSF(hpix, E_min, E_max, PSFFile='P7Clean_Front+Back.fits', sigma=.1, sm
     
     # Fit the PSF to l_max legendre polynomials
     cls = np.sqrt(4*np.pi/(2*np.arange(0, l_max+1)+1))*np.polynomial.legendre.legfit(psf_x, psf_y, l_max)
-    conv_alm=healpy.sphtfunc.almxfl(alm, cls)
+    conv_alm = healpy.sphtfunc.almxfl(alm, cls)
 
     # Find nside and return inverse transformed map. 
     nside = healpy.get_nside(hpix)
@@ -149,10 +149,8 @@ def ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=1.):
     halfmax = np.argmin(np.abs(0.5-psf/psf.max()))
     FWHM = np.deg2rad(2*theta[halfmax])
     
-    # Spherical Harmonic transform 
-    alm = healpy.sphtfunc.map2alm(hpix)
-    # inverse transform with gaussian beam
-    return healpy.sphtfunc.alm2map(alm, nside=healpy.get_nside(hpix), fwhm=FWHM, verbose=False)
+    # Spherical Harmonic transform
+    return healpy.sphtfunc.smoothing(hpix, fwhm=FWHM*multiplier, verbose=False, iter=1)
 
 
 currentExpCube, expcubehdu = None, None  # keeps track of the current gtexpcube2
@@ -173,6 +171,10 @@ def GetExpMap(E_min, E_max, l, b, expcube):
     if expcube != currentExpCube:
         expcubehdu = pyfits.open(expcube)
 
+
+    
+
+
     # Find the average photon energy over the band
     alpha = GetSpectralIndex(E_min, E_max)
     if E_min == E_max:
@@ -180,6 +182,8 @@ def GetExpMap(E_min, E_max, l, b, expcube):
     else:
         average_E = 10**(0.5*(np.log10(E_min)+np.log10(E_max)))
         # average_E = (1-alpha)/(alpha-2)*(E_min**(2-alpha)-E_max**(2-alpha))/(E_min**(1-alpha)-E_max**(1-alpha))
+
+
 
     # Find the energy bin in the expcube file
     Ebin = int(np.round((np.log(average_E)-expcubehdu[0].header['CRVAL3'])/expcubehdu[0].header['CDELT3'])
@@ -218,6 +222,30 @@ def GetExpMap(E_min, E_max, l, b, expcube):
 
     # Return the exposure map in cm*s
     return expcubehdu[0].data[Ebin, b_bin, l_bin]
+
+
+def ApplyIRF( hpix, E_min, E_max, psfFile , expCube ,noPSF=False, noExp=False, multiplier=1.):
+        """
+        Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
+        These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
+        diffuse model.
+
+        :param    hpix: A healpix array.
+        :param    E_min: low energy boundary
+        :param    E_max: high energy boundary
+        :param    noPSF: Do not apply the PSF
+        :param    noExp: Do not apply the effective exposure
+        :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
+        """
+        # Apply the PSF.  This is automatically spectrally weighted
+        if noPSF is False:
+            hpix = ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=multiplier)
+        # Get l,b for each healpix pixel
+        l, b = hpix2ang(np.arange(len(hpix)), nside=int(np.sqrt(len(hpix)/12)))
+        # For each healpix pixel, multiply by the exposure.
+        if noExp is False:
+            hpix *= GetExpMap(E_min, E_max, l, b, expcube=expCube,)
+        return hpix
 
 
 def GetSpectralIndex(E_min, E_max):

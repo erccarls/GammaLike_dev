@@ -15,7 +15,7 @@ import GammaLikelihood
 import copy
 from scipy.integrate import quad
 import multiprocessing as mp
-
+import sys
 
 class Analysis():
     #--------------------------------------------------------------------
@@ -157,28 +157,28 @@ class Analysis():
             self.mask = mask
         return mask
 
-    def ApplyIRF(self, hpix, E_min, E_max, noPSF=False, noExp=False, multiplier=1.):
-        """
-        Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
-        These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
-        diffuse model.
-
-        :param    hpix: A healpix array.
-        :param    E_min: low energy boundary
-        :param    E_max: high energy boundary
-        :param    noPSF: Do not apply the PSF
-        :param    noExp: Do not apply the effective exposure
-        :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
-        """
-        # Apply the PSF.  This is automatically spectrally weighted
-        if noPSF is False:
-            hpix = Tools.ApplyGaussianPSF(hpix, E_min, E_max, self.psfFile, multiplier=multiplier)
-        # Get l,b for each healpix pixel 
-        l, b = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
-        # For each healpix pixel, multiply by the exposure.
-        if noExp is False:
-            hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expCube,)
-        return hpix
+    # def ApplyIRF(self, hpix, E_min, E_max, noPSF=False, noExp=False, multiplier=1.):
+    #     """
+    #     Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
+    #     These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
+    #     diffuse model.
+    #
+    #     :param    hpix: A healpix array.
+    #     :param    E_min: low energy boundary
+    #     :param    E_max: high energy boundary
+    #     :param    noPSF: Do not apply the PSF
+    #     :param    noExp: Do not apply the effective exposure
+    #     :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
+    #     """
+    #     # Apply the PSF.  This is automatically spectrally weighted
+    #     if noPSF is False:
+    #         hpix = Tools.ApplyGaussianPSF(hpix, E_min, E_max, self.psfFile, multiplier=multiplier)
+    #     # Get l,b for each healpix pixel
+    #     l, b = Tools.hpix2ang(np.arange(len(hpix)), nside=self.nside)
+    #     # For each healpix pixel, multiply by the exposure.
+    #     if noExp is False:
+    #         hpix *= Tools.GetExpMap(E_min, E_max, l, b, expcube=self.expCube,)
+    #     return hpix
 
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
                                     fixSpectrum=False, fixNorm=False, limits=[0., 10.], value=1,):
@@ -296,11 +296,16 @@ class Analysis():
         if ApplyIRF:
             for i_E in range(len(self.bin_edges)-1):
                 if sourceClass == 'ISO':
-                    healpixCube[i_E] = self.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
-                                                     noPSF=True)
+                    healpixCube[i_E] = Tools.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
+                                                      self.psfFile, self.expCube, noPSF=True)
                 else:
-                    healpixCube[i_E] = self.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
-                                                     multiplier=multiplier)
+                    # This can be expensive if applying the PSF due to spherical harmonic transforms.
+                    # This is already multithreaded in healpy.
+                    healpixCube[i_E] = Tools.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
+                                                      self.psfFile, self.expCube, multiplier=multiplier)
+
+
+
 
         # Instantiate the template object. 
         template = Template.Template(healpixCube.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass,
@@ -471,7 +476,8 @@ class Analysis():
                              value=1, ApplyIRF=False, sourceClass='GEN', limits=[0, 5.], multiplier=multiplier)
 
     def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
-               tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3):
+               tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3,
+               fixSpectrum=False):
         """
         This method takes a base analysis prefix, along with an X_CO profile and generates the combined diffuse template,
         or components of the diffuse template.
@@ -483,6 +489,7 @@ class Analysis():
         :param bremsfrac: If None, brems is treated as independent.  Otherwise Brem normalization
             is linked to Pi0 normalization, scaled by a factor bremsfrac.
         :param E_subsample: Number of energy sub bins to use when integrating over each energy band.
+        :para fixSpectrum: Allow the spectrum to float in each energy bin.
         """
 
         #---------------------------------------------------------------------------------
@@ -519,7 +526,7 @@ class Analysis():
             for i_E in range(self.n_bins):
                 p.apply_async(Tools.AsyncInterpolateHealpix,
                               [comps[component], energies, self.bin_edges[i_E], self.bin_edges[i_E+1],
-                               i_E, component, 3, self.nside],
+                               i_E, component, E_subsample, self.nside],
                               callback=callback)
             p.close()
             p.join()
@@ -528,6 +535,7 @@ class Analysis():
         for key in comps:
             if verbosity>0:
                 print 'Integrating and Resampling', key, 'templates...'
+                sys.stdout.flush()
             RunAsync(key)
 
 
@@ -539,18 +547,18 @@ class Analysis():
             self.templateList.pop(key, None)
 
 
-        self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=True, fixNorm=False,
+        self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=fixSpectrum, fixNorm=False,
                            value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 10.], multiplier=multiplier)
 
         if bremsfrac is None:
-            self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=True, fixNorm=False,
+            self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=fixSpectrum, fixNorm=False,
                                value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 10.], multiplier=multiplier)
-            self.AddTemplate(name='Pi0', healpixCube=comps_new['pi0'], fixSpectrum=True, fixNorm=False,
+            self.AddTemplate(name='Pi0', healpixCube=comps_new['pi0'], fixSpectrum=fixSpectrum, fixNorm=False,
                                value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 10.], multiplier=multiplier)
 
         else:
             self.AddTemplate(name='Pi0_Brems', healpixCube=comps_new['pi0']+bremsfrac*comps_new['brem'],
-                               fixSpectrum=True, fixNorm=False,
+                               fixSpectrum=fixSpectrum, fixNorm=False,
                                value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 10.], multiplier=multiplier)
 
 
@@ -721,7 +729,7 @@ class Analysis():
                          fixNorm=False, limits=[0., 5.], value=1., ApplyIRF=True,
                          sourceClass='GEN', valueUnc=valueUnc)
 
-    def CalculatePixelWeights(self, diffuse_model, psc_model, alpha_psc=5., f_psc=0.1):
+    def CalculatePixelWeights(self, diffuse_model, psc_model, alpha_psc=5, f_psc=0.1):
         """
         Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042).
 
