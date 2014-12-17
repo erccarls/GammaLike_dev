@@ -57,7 +57,7 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
             continue
         # Debug
         if onlyidx is not None:
-            if i_idx not in onlyidx:
+            if idx not in onlyidx:
                 continue
 
         # -----------------------------------------------------------
@@ -92,6 +92,7 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
             counts = norm*np.array([integratedspec(bin_edges[i_E], bin_edges[i_E+1], specindex, beta, pivot)
                                     for i_E in range(len(bin_edges)-1)])
             psfWeights = spec(energies, specindex, beta, pivot)
+
 
         # Now counts contains ph/cm^2/s^2 for each bin so we need to get the effective area in each bin.
         exposure = np.array([Tools.GetExpMap(bin_edges[i_E], bin_edges[i_E+1], glon, glat, expcube)

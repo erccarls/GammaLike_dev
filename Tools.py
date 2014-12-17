@@ -56,12 +56,16 @@ def GetSpec(specType):
     """
     if specType == 'PowerLaw':
         Spec = lambda e, gamma: e**-gamma
-        IntegratedSpec = lambda e1, e2, gamma: (e1*e2)**-gamma * (e1*e2**gamma - e1**gamma*e2)/(gamma-1)
+        IntegratedSpec = lambda e1, e2, gamma: quad(Spec, e1, e2, args=(gamma, ))[0]
+        # Analytic Result
+        # IntegratedSpec = lambda e1, e2, gamma: (e1*e2)**-gamma * (e1*e2**gamma - e1**gamma*e2)/(gamma-1)
 
     elif specType == 'PLExpCutoff':
         Spec = lambda e, gamma, cutoff: e**-gamma * np.exp(-e/cutoff)
-        IntegratedSpec = lambda e1, e2, gamma, cutoff: (e1**(1-gamma)*expn(gamma, e1/cutoff)
-                                                        -e2**(1-gamma)*expn(gamma, e2/cutoff))
+        IntegratedSpec = lambda e1, e2, gamma, cutoff: quad(Spec, e1, e2, args=(gamma, cutoff))[0]
+        # Analytic Integration
+        #IntegratedSpec = lambda e1, e2, gamma, cutoff: (e1**(1-gamma)*expn(gamma, e1/cutoff)
+        #                                                -e2**(1-gamma)*expn(gamma, e2/cutoff))
     elif specType == 'LogParabola':
         Spec = lambda e, alpha, beta, pivot: (e/pivot)**-(alpha+beta*np.log(e/pivot))
         IntegratedSpec = lambda e1, e2, alpha, beta, pivot: quad(Spec, e1, e2, args=(alpha, beta, pivot))[0]
@@ -155,7 +159,7 @@ def ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=1.):
 
 currentExpCube, expcubehdu = None, None  # keeps track of the current gtexpcube2
 
-def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=-2):
+def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=0):
     """
     Returns the effective area given the energy range and angular coordinates.
 
@@ -171,6 +175,9 @@ def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=-2):
     :return   Effective Exposure: value of the effective exposure in cm^2*s at the given coordinates.
 
     """
+    # TODO: GetExpMap THIS NEEDS TO BE MORE ACCURATE.  Especially at high energies.  Need to generate many spectral bins and integrate carefully.
+
+
     # check if the expCube has already been opened.
     global currentExpCube, expcubehdu
     if expcube != currentExpCube:
