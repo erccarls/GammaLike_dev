@@ -634,17 +634,16 @@ class Analysis():
             E_min, E_max = self.bin_edges[i_E], self.bin_edges[i_E+1]
 
             if self.expMap[i_E] is not None:
-                eff_area = self.expMap * (E_max-E_min) * healpy.pixelfunc.nside2pixarea(self.nside)
+                eff_area = self.expMap[i_E][mask_idx] * (E_max-E_min) * healpy.pixelfunc.nside2pixarea(self.nside)
             else:
                 # Get the effective area for the masked region.
                 l, b = Tools.hpix2ang(mask_idx, self.nside)
                 # eff_area*bin width*solid_angle
-                eff_area = (Tools.GetExpMap(E_min, E_max, l, b, self.expCube, self.expMap)
+                eff_area = (Tools.GetExpMap(E_min, E_max, l, b, self.expCube)
                             * (E_max-E_min)
                             * healpy.pixelfunc.nside2pixarea(self.nside))
             # if value is not a vector
             if np.ndim(t.value) == 0:
-
                 stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)
                               / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
                 count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value
