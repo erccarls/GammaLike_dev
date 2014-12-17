@@ -150,12 +150,12 @@ def ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=1.):
     FWHM = np.deg2rad(2*theta[halfmax])
     
     # Spherical Harmonic transform
-    return healpy.sphtfunc.smoothing(hpix, fwhm=FWHM*multiplier, verbose=False, iter=1)
+    return healpy.sphtfunc.smoothing(hpix, fwhm=FWHM*multiplier, verbose=False, iter=2)
 
 
 currentExpCube, expcubehdu = None, None  # keeps track of the current gtexpcube2
 
-def GetExpMap(E_min, E_max, l, b, expcube):
+def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=-2):
     """
     Returns the effective area given the energy range and angular coordinates.
 
@@ -164,7 +164,12 @@ def GetExpMap(E_min, E_max, l, b, expcube):
     :param    l: Galactic longitude.
     :param    b: Galactic latitude.
     :param    expcube: Exposure cube file over observation from Fermitools gtexpcube2.
-    :return Effective Exposure: value of the effective exposure in cm^2*s at the given coordinates.
+    :param    subsamples: Number of sub-bins for integration (note that the exposure is already power-law interpolated
+                so this can be relatively small)
+    :param    spectral_index=-2: When combining the subbins, a spectrum must be assumed for weighting.  This is only
+              reasonably important at energies < 100
+    :return   Effective Exposure: value of the effective exposure in cm^2*s at the given coordinates.
+
     """
     # check if the expCube has already been opened.
     global currentExpCube, expcubehdu
@@ -174,27 +179,38 @@ def GetExpMap(E_min, E_max, l, b, expcube):
     energies = np.log10([e[0] for e in expcubehdu[1].data])
     lats = np.linspace(-90, 90, expcubehdu[0].header['NAXIS2'])
     lons = np.linspace(-180, 180, expcubehdu[0].header['NAXIS1'])
+    # Need to reverse the first axis of the
     reversed_arr = np.swapaxes(np.swapaxes(expcubehdu[0].data, 0, 2)[::-1], 0, 2)
 
     # Build the interpolator
     rgi = RegularGridInterpolator((energies, lats, lons), reversed_arr, method='linear',
                                   bounds_error=False, fill_value=np.float32(0.))
-    average_E = 10**(0.5*(np.log10(E_min)+np.log10(E_max)))
 
     # convert 0-360 to -180-180
     l, b = np.array(l), np.array(b)
     if l.ndim == 0:
         if l > 180:
             l -= 360
+        interpolated = 0.
     else:
         idx = np.where(l > 180)[0]
         l[idx] -= 360.
+        interpolated = np.zeros(l.shape[0])
 
-    return rgi((np.log10(average_E), b, l))
+    # average_E = 10**(0.5*(np.log10(E_min)+np.log10(E_max)))
+    # Weight against the spectrum.
+    E_list = np.logspace(np.log10(E_min), np.log10(E_max), subsamples)
+    weights = E_list**-spectral_index
+
+    for i, E in enumerate(E_list):
+        interpolated += rgi((np.log10(E), b, l))*(weights[i]/np.sum(weights))
+    #interpolated = np.average(rgi((np.log10(E_list), b, l)), weights=weights, axis=0)
+
+    return interpolated
 
 
 
-def ApplyIRF( hpix, E_min, E_max, psfFile , expCube ,noPSF=False, noExp=False, multiplier=1.):
+def ApplyIRF(hpix, E_min, E_max, psfFile , expCube ,noPSF=False, noExp=False, multiplier=1., expMap=None):
         """
         Apply the Instrument response functions to the input healpix map. This includes the effective area and PSF.
         These quantities are automatically computed based on the spectral weighted average with spectrum from P7REP_v15
@@ -206,6 +222,7 @@ def ApplyIRF( hpix, E_min, E_max, psfFile , expCube ,noPSF=False, noExp=False, m
         :param    noPSF: Do not apply the PSF
         :param    noExp: Do not apply the effective exposure
         :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
+        :param    expMap: Can pass in a precomputed healpixcube exposure map to speed things up.
         """
         # Apply the PSF.  This is automatically spectrally weighted
         if noPSF is False:
@@ -214,7 +231,10 @@ def ApplyIRF( hpix, E_min, E_max, psfFile , expCube ,noPSF=False, noExp=False, m
         l, b = hpix2ang(np.arange(len(hpix)), nside=int(np.sqrt(len(hpix)/12)))
         # For each healpix pixel, multiply by the exposure.
         if noExp is False:
-            hpix *= GetExpMap(E_min, E_max, l, b, expcube=expCube,)
+            if expMap is None:
+                hpix *= GetExpMap(E_min, E_max, l, b, expcube=expCube,)
+            else:
+                hpix *= expMap
         return hpix
 
 
@@ -296,7 +316,6 @@ def SampleCartesianMap(fits, E_min, E_max, nside, E_bins=5):
     :returns: Healpix sampling of the input cartesian data cube with units in (s cm^2)^-1
     """
     hdu = pyfits.open(fits)
-    # TODO: Check sensitivity of fitting results to number of sub-bins (E_bins). Do we need more integration accuracy?
     # Define the grid spacings
     energies = np.log10([e[0] for e in hdu[1].data])
     lats = np.linspace(-90, 90, hdu[0].header['NAXIS2'])

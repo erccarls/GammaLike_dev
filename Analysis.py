@@ -82,7 +82,7 @@ class Analysis():
         self.res_vals = None     # dict with best fit values for basinhopping minimizer.
         self.jfactor = 0.        # Dark matter j-factor
         self.psc_weights = None  # Pixel weighting for likelihood analysis
-
+        self.expMap =None        # Stores the precomputed exposure map in memory.
 
 
         prefix_n_bins = len(prefix_bins)-1
@@ -96,6 +96,13 @@ class Analysis():
             self.bin_edges += [Ej, ]
         # Add the prefix bins to the total bincount.
         self.n_bins += prefix_n_bins
+
+
+        try:
+            self.expMap = np.load('expmap_'+self.tag+'.npy')
+        except:
+            print "Warning: precomputed exposure map not found.  Reverting to slower methods, but you should run" \
+                  " Analysis.GenExposureMap() for substantial speed increase."
 
     def BinPhotons(self, infile=None, outfile=None):
         """
@@ -213,8 +220,7 @@ class Analysis():
         """
         if pscmap is None:
             pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
-
-        # TODO: Adaptively set l_range and b_range based on current mask? At least make entire map.
+        # TODO: GenPointSourceTemplate: Set l_range and b_range back to full sky in production version.
         total_map = SourceMap.GenSourceMap(self.bin_edges, l_range=(-30, 30), b_range=(-30, 30),
                                            fglpath=self.fglpath,
                                            expcube=self.expCube,
@@ -274,15 +280,13 @@ class Analysis():
             for i_E in range(len(self.bin_edges)-1):
                 if sourceClass == 'ISO':
                     healpixCube[i_E] = Tools.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
-                                                      self.psfFile, self.expCube, noPSF=True)
+                                                      self.psfFile, self.expCube, noPSF=True, expMap=self.expMap[i_E])
                 else:
                     # This can be expensive if applying the PSF due to spherical harmonic transforms.
                     # This is already multithreaded in healpy.
                     healpixCube[i_E] = Tools.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
-                                                      self.psfFile, self.expCube, multiplier=multiplier)
-
-
-
+                                                      self.psfFile, self.expCube, multiplier=multiplier,
+                                                      expMap=self.expMap[i_E])
 
         # Instantiate the template object. 
         template = Template.Template(healpixCube.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass,
@@ -298,7 +302,7 @@ class Analysis():
         """
         self.templateList.pop(name, None)
 
-    def AddIsotropicTemplate(self, isofile='./IGRB_ackerman_2014_modA.dat', fixNorm=False):
+    def AddIsotropicTemplate(self, isofile='./IGRB_ackerman_2014_modA.dat', fixNorm=False, fixSpectrum=True):
         """
         Generates an isotropic template from a spectral file and add it to the current templateList
 
@@ -331,10 +335,8 @@ class Analysis():
 
         # Add the template to the list. 
         # IRFs are applied during add template.  This multiplies by cm^2 s
-        self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=True,
-                        fixNorm=fixNorm, limits=[0, 5.0], value=1, ApplyIRF=True, sourceClass='ISO', valueUnc=valueUnc)
-
-        # TODO: NEED TO DEAL WITH UNCERTAINTY VECTOR in likelihood fit.
+        self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=fixSpectrum,
+                         fixNorm=fixNorm, limits=[0, 5.0], value=1, ApplyIRF=True, sourceClass='ISO', valueUnc=valueUnc)
 
     def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20.,
                       spec_file=None, limits=[0, 50.]):
@@ -363,9 +365,11 @@ class Analysis():
 
         self.jfactor = np.sum(tmp*self.mask)
 
-        exposure = Tools.GetExpMap(E_min=1e3, E_max=2e3, l=0., b=0., expcube=self.expCube)
+        # Just get an idea of the typical exposure aoround 1 GeV so we can prescale the fitting inputs
+        exposure = Tools.GetExpMap(E_min=1e3, E_max=1e3, l=0., b=0., expcube=self.expCube, subsamples=1)
         self.dm_renorm = 10./exposure/np.max(tmp)
         tmp *= self.dm_renorm
+
 
         healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
 
@@ -440,6 +444,7 @@ class Analysis():
                 healpixcube[i] = Tools.SampleCartesianMap(fits=diffuse_path,
                                                           E_min=self.bin_edges[i], E_max=self.bin_edges[i+1],
                                                           nside=self.nside)
+                print '\rRemapping Fermi Diffuse Model to Healpix Grid %.2f' % ((float(i+1)/self.n_bins)*100.), "%",
 
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
                              value=1, ApplyIRF=True, sourceClass='GEN', limits=[0, 5.], multiplier=multiplier)
@@ -454,7 +459,7 @@ class Analysis():
 
     def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
                tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3,
-               fixSpectrum=False):
+               fixSpectrum=True):
         """
         This method takes a base analysis prefix, along with an X_CO profile and generates the combined diffuse template,
         or components of the diffuse template.
@@ -628,12 +633,15 @@ class Analysis():
             # Get energy bin boundaries
             E_min, E_max = self.bin_edges[i_E], self.bin_edges[i_E+1]
 
-            # Get the effective area for the masked region.
-            l, b = Tools.hpix2ang(mask_idx, self.nside)
-            # eff_area*bin width*solid_angle
-            eff_area = (Tools.GetExpMap(E_min, E_max, l, b, self.expCube)
-                        * (E_max-E_min)
-                        * healpy.pixelfunc.nside2pixarea(self.nside))
+            if self.expMap[i_E] is not None:
+                eff_area = self.expMap * (E_max-E_min) * healpy.pixelfunc.nside2pixarea(self.nside)
+            else:
+                # Get the effective area for the masked region.
+                l, b = Tools.hpix2ang(mask_idx, self.nside)
+                # eff_area*bin width*solid_angle
+                eff_area = (Tools.GetExpMap(E_min, E_max, l, b, self.expCube, self.expMap)
+                            * (E_max-E_min)
+                            * healpy.pixelfunc.nside2pixarea(self.nside))
             # if value is not a vector
             if np.ndim(t.value) == 0:
 
@@ -705,6 +713,23 @@ class Analysis():
         self.AddTemplate(healpixCube=healpixcube, name='Bubbles', fixSpectrum=fixSpectrum,
                          fixNorm=False, limits=[0., 5.], value=1., ApplyIRF=True,
                          sourceClass='GEN', valueUnc=valueUnc)
+
+    def GenExposureMap(self):
+        """
+        This is intended for precomputation of the exposure map.  It performs a more precise integration over energy
+        bins and saves the result to file for quick use.
+
+        :return: None
+        """
+
+        l, b = Tools.hpix2ang(np.arange(12*self.nside**2))
+        healpixcube = np.zeros((self.n_bins, len(l)), dtype=np.float32)
+        for i_E in range(self.n_bins):
+            healpixcube[i_E] = Tools.GetExpMap(E_min=self.bin_edges[i_E], E_max=self.bin_edges[i_E+1],
+                                               l=l, b=b, expcube=self.expCube, subsamples=5, spectral_index=-2.25)
+            print '\rGenerating exposure map %.2f' % ((float(i_E+1)/self.n_bins)*100.), "%",
+        np.save('expmap_'+self.tag+'.npy', healpixcube)
+
 
     def CalculatePixelWeights(self, diffuse_model, psc_model, alpha_psc=5, f_psc=0.1):
         """
