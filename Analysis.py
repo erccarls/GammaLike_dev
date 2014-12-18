@@ -220,8 +220,8 @@ class Analysis():
         """
         if pscmap is None:
             pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
-        # TODO: GenPointSourceTemplate: Set l_range and b_range back to full sky in production version.
-        total_map = SourceMap.GenSourceMap(self.bin_edges, l_range=(-30, 30), b_range=(-30, 30),
+
+        total_map = SourceMap.GenSourceMap(self.bin_edges, l_range=(-180, 180), b_range=(-90, 90),
                                            fglpath=self.fglpath,
                                            expcube=self.expCube,
                                            psffile=self.psfFile,

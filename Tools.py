@@ -159,7 +159,7 @@ def ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=1.):
 
 currentExpCube, expcubehdu = None, None  # keeps track of the current gtexpcube2
 
-def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=0):
+def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=-2):
     """
     Returns the effective area given the energy range and angular coordinates.
 
@@ -177,13 +177,12 @@ def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=0):
     """
     # TODO: GetExpMap THIS NEEDS TO BE MORE ACCURATE.  Especially at high energies.  Need to generate many spectral bins and integrate carefully.
 
-
     # check if the expCube has already been opened.
     global currentExpCube, expcubehdu
     if expcube != currentExpCube:
         expcubehdu = pyfits.open(expcube)
 
-    energies = np.log10([e[0] for e in expcubehdu[1].data])
+    energies = np.log10(expcubehdu[1].data.field(0))
     lats = np.linspace(-90, 90, expcubehdu[0].header['NAXIS2'])
     lons = np.linspace(-180, 180, expcubehdu[0].header['NAXIS1'])
     # Need to reverse the first axis of the

@@ -57,11 +57,9 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
     rm photons_merged_'''+str(tag)+'''.fits
 
     echo "running gtltcube"
-    #gtltcube evfile=photons_merged_cut_'''+str(tag)+'''.fits scfile='''+str(scfile)+'''\
-    #    outfile="cube_'''+str(tag)+'''.fits" dcostheta=0.5 binsz=2 zmax='''+str(zmax)+''' clobber=True
 
     gtltcube evfile=photons_merged_cut_'''+str(tag)+'''.fits scfile='''+str(scfile)+'''\
-        outfile="cube_'''+str(tag)+'''.fits" dcostheta=0.5 binsz=2 zmin=0 zmax=180 clobber=True
+        outfile="cube_'''+str(tag)+'''.fits" dcostheta=0.1 binsz=1 zmin=0 zmax=180 clobber=True
 
     # make ebin file
     echo "running gtbindef"
