@@ -371,7 +371,7 @@ nHII_model           = 3
 #COCube_filename      = CO_PEB_galprop_8500.fits.gz
 #HICube_filename      = HI_NS_galprop_8500.fits.gz
 COCube_filename      = CO_PEB_galprop.fits.gz
-HICube_filename      = HI_NS_galprop.fits.gz
+HICube_filename      = HI_NS_kipac_galprop.fits.gz
 '''
     
     f = open('//data/galprop2/GALDEF/galdef_54_' + filename, 'wb')
@@ -399,13 +399,13 @@ HICube_filename      = HI_NS_galprop.fits.gz
         
    
 
-GenGaldef('base_no_secondary', dx=3,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
-            secondary_leptons=0,secondary_hadrons=0)
+# GenGaldef('base_no_secondary', dx=3,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#             secondary_leptons=0,secondary_hadrons=0)
 GenGaldef('NSPEB_no_secondary', dx=3,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
             secondary_leptons=0,secondary_hadrons=0,HIModel=2,H2Model=1)
 
 #GenGaldef('F07_no_secondary', dx=3,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
-#            secondary_leptons=0,secondary_hadrons=0,HIModel=3,H2Model=3)
+#            secondary_leptons=0,secondary_hadrons=0,HIModel=3,H2Model=1)
 
 # GenGaldef('base_no_secondary', dx=1.5,dz=.25,IC_isotropic=1,computeBremss=1,secondary_leptons=0,secondary_hadrons=0)
 # GenGaldef('NSPEB', dx=1.5,dz=.25,IC_isotropic=1,computeBremss=1,secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=2)

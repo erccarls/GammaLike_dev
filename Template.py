@@ -32,6 +32,7 @@ class Template():
         self.value = value
         self.sourceClass = sourceClass
         self.valueUnc = valueUnc
+        self.valueError = None  # Stores the fitting errors on the values
 
         #if fixNorm:
         #    self.limits = [value, value]

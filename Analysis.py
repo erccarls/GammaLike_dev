@@ -83,7 +83,7 @@ class Analysis():
         self.jfactor = 0.        # Dark matter j-factor
         self.psc_weights = None  # Pixel weighting for likelihood analysis
         self.expMap =None        # Stores the precomputed exposure map in memory.
-
+        self.central_energies = None  # Log-central energies for each bin.
 
         prefix_n_bins = len(prefix_bins)-1
         # --------------------------------------------------------------------
@@ -96,7 +96,9 @@ class Analysis():
             self.bin_edges += [Ej, ]
         # Add the prefix bins to the total bincount.
         self.n_bins += prefix_n_bins
-
+        # Calculate the log-center of each bin.
+        self.central_energies = 10**np.array([0.5*(np.log10(self.bin_edges[i])+np.log10(self.bin_edges[i+1]))
+                                              for i in range(self.n_bins)])
 
         try:
             self.expMap = np.load('expmap_'+self.tag+'.npy')
@@ -566,11 +568,15 @@ class Analysis():
                     t.value = self.res_vals[key]
                 else:
                     t.value = self.m.values[key]
+                    t.valueError = self.m.errors[key]
+
             else:
                 if self.res is not None:
                     t.value = np.array([self.res_vals[key+'_'+str(i)] for i in range(self.n_bins)])
                 else:
                     t.value = np.array([self.m.values[key+'_'+str(i)] for i in range(self.n_bins)])
+                    t.valueError = np.array([self.m.errors[key+'_'+str(i)] for i in range(self.n_bins)])
+
 
         self.fitted = True
         self.residual = self.GetResidual()
@@ -613,10 +619,6 @@ class Analysis():
         if not self.fitted:
             print 'Warning! Template fitting has not been done. returned spectrum may equal input spectrum.'
 
-        # Get the bin centers
-        bin_centers = np.array([10**(0.5*(np.log10(self.bin_edges[i+1])+np.log10(self.bin_edges[i])))
-                                for i in range(self.n_bins)])
-
         # Run through the template and obtain the spectrum in total counts over the masked area
         mask_idx = np.nonzero(self.mask)[0]
 
@@ -647,18 +649,20 @@ class Analysis():
                 stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)
                               / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
                 count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value
+                fit_error = t.valueError
 
             # if value is a vector
             elif np.ndim(t.value) == 1 and len(t.value) == self.n_bins:
                 stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value[i_E])
                               / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
+                fit_error = t.valueError[i_E]
                 count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value[i_E]
             else:
                 raise Exception("template.value attribute has invalid dimension or type.")
             flux.append(count)
-            stat_errors.append(stat_error)
+            stat_errors.append(np.sqrt(stat_error**2+fit_error**2))
 
-        return bin_centers, np.array(flux), np.array(stat_errors)
+        return self.central_energies, np.array(flux), np.array(stat_errors)
 
     def AddFermiBubbleTemplate(self, template_file='./bubble_templates_diskcut30.0.fits',
                                spec_file='./reduced_bubble_spec_apj_793_64.dat', fixSpectrum=True):

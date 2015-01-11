@@ -120,7 +120,7 @@ def LOS_DM(l_max, b_max, res, z_step=0.02, func1='func = lambda x,y,z: 1.', func
     return proj_skymap
 
 
-def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation=0., offset=(0, 0), res=.125, size=50.,
+def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation=0., offset=(0, 0), res=.125, size=180.,
            fitsout=None, r_s=20., mult_solid_ang=False):
     """
     Generates a dark matter annihilation or decay skymap combined with instrumental and point source maps.
