@@ -482,13 +482,30 @@ class Analysis():
         if verbosity>0:
             print 'Loading FITS'
 
-        comps, comps_new = {}, {}
-        comps['ics'] = pyfits.open(basedir+'/ics_isotropic_healpix_54_'+tag+'.gz')[1].data.field(0).T
-        comps['pi0'] = pyfits.open(basedir+'/pi0_decay_healpix_54_'+tag+'.gz')[1].data.field(0).T
-        comps['brem'] = pyfits.open(basedir+'/bremss_healpix_54_'+tag+'.gz')[1].data.field(0).T
-
         energies = pyfits.open(basedir+'/bremss_healpix_54_'+tag+'.gz')[2].data.field(0)
-        nside_in = np.sqrt(comps['ics'].shape[1]/12)
+
+        # For some reason, older versions of galprop files have slightly different data structures.  This try/except
+        # will detect the right one to use. 
+        comps, comps_new = {}, {}
+        try:
+            comps['ics'] = pyfits.open(basedir+'/ics_isotropic_healpix_54_'+tag+'.gz')[1].data.field(0).T
+            comps['pi0'] = pyfits.open(basedir+'/pi0_decay_healpix_54_'+tag+'.gz')[1].data.field(0).T
+            comps['brem'] = pyfits.open(basedir+'/bremss_healpix_54_'+tag+'.gz')[1].data.field(0).T
+
+            print "Shape of ICS component: ", comps['ics'].shape
+            nside_in = np.sqrt(comps['ics'].shape[1]/12)
+        except:
+
+            def ReadFits(fname, length):
+                d = pyfits.open(fname)[1].data
+                return np.array([d.field(i) for i in range(length)])
+
+            comps['ics'] = ReadFits(basedir+'/ics_isotropic_healpix_54_'+tag+'.gz', len(energies))
+            comps['brem'] = ReadFits(basedir+'/bremss_healpix_54_'+tag+'.gz', len(energies))
+            comps['pi0'] = ReadFits(basedir+'/pi0_decay_healpix_54_'+tag+'.gz', len(energies))
+
+            print "v2 Shape of ICS component: ", comps['ics'].shape
+            nside_in = np.sqrt(comps['ics'].shape[1]/12)
 
         # Init new templates
         comps_new['ics'] = np.zeros((self.n_bins, 12*self.nside**2))
@@ -546,7 +563,8 @@ class Analysis():
                                value=1, ApplyIRF=True, sourceClass='GEN', limits=[0., 50.], multiplier=multiplier)
 
 
-    def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e5):
+    def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e5,
+                      precision=1e-10):
         """
         Runs the likelihood analysis on the current templateList.
 
@@ -555,13 +573,15 @@ class Analysis():
         :param start_fresh: Skip migrad and just use basinhopping.
         :param niter_success: Number of successful iterations required before stopping basinhopping.
         :param tol: Tolerance for EDM in migrad convergence.
+        :param precision: Migrad internal precision override.
         :returns m, res: m is an iMinuit object and res is a scipy minimization object.
         """
         self.m, self.res, self.res_vals = GammaLikelihood.RunLikelihood(self, print_level=print_level,
                                                                         use_basinhopping=use_basinhopping,
                                                                         start_fresh=start_fresh,
                                                                         niter_success=niter_success,
-                                                                        tol=tol)
+                                                                        tol=tol,
+                                                                        precision=precision)
 
         # Run through the templates and update values to the best fit.
         for key, t in self.templateList.items():

@@ -12,7 +12,8 @@ import time
 import imp
 
 
-def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30, tol=100000.):
+def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30, tol=100000.,
+                  precision=1e-14):
     """
     Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py).
 
@@ -22,6 +23,7 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     :param start_fresh: If use_basinhopping==True, then start_fresh==True does not run migrad before basinhopping.
     :param niter_success: Setting for basinhopping algorithm.  See scipy docs.
     :param tol: EDM Tolerance for migrad convergence.
+    :param precision: Migrad internal precision override.
     :returns (m, res):
             m: iminuit result object\n
             res: scipy.minimize result.  None if use_basinhopping==False
@@ -245,7 +247,7 @@ class like():
     m.tol = tol  # TODO: why does m.tol need to be so big to converge when errors are very small????
     #m.migrad(ncall=200000, precision=1e-15)
     if not start_fresh:
-        m.migrad(ncall=1e6)
+        m.migrad(ncall=1e6, precision=precision)
 
     #m.minos(maxcall=10000,sigma=2.)
 
