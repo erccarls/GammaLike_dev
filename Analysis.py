@@ -167,7 +167,7 @@ class Analysis():
         return mask
 
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
-                                    fixSpectrum=False, fixNorm=False, limits=[0.0, None], value=1,):
+                                    fixSpectrum=False, fixNorm=False, limits=[0., 50.], value=1,):
         """
         Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted
         to a healpix template.
@@ -189,7 +189,7 @@ class Analysis():
 
 
     def AddPointSourceTemplate(self, pscmap=None, name='PSC', fixNorm=False,
-                               limits=[0.0, None], value=1, multiplier=1.):
+                               limits=[0., 50.], value=1, multiplier=1.):
         """
         Adds a point source map to the list of templates.
 
@@ -256,7 +256,7 @@ class Analysis():
                 print '         --------------------------------------------------------------------------------------'
 
 
-    def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0.0, None], value=1, ApplyIRF=True,
+    def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0., 50.], value=1, ApplyIRF=True,
                     sourceClass='GEN', multiplier=1., valueUnc=None):
         """
         Add Template to the template list.
@@ -338,10 +338,10 @@ class Analysis():
         # Add the template to the list. 
         # IRFs are applied during add template.  This multiplies by cm^2 s
         self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=fixSpectrum,
-                         fixNorm=fixNorm, limits=[0.0, None], value=1, ApplyIRF=True, sourceClass='ISO', valueUnc=valueUnc)
+                         fixNorm=fixNorm, limits=[0., 50.], value=1, ApplyIRF=True, sourceClass='ISO', valueUnc=valueUnc)
 
     def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20.,
-                      spec_file=None, limits=[0.0, None]):
+                      spec_file=None, limits=[0., 50.]):
         """
         Generates a dark matter template and adds it to the current template stack.
 
@@ -449,7 +449,7 @@ class Analysis():
                 print '\rRemapping Fermi Diffuse Model to Healpix Grid %.2f' % ((float(i+1)/self.n_bins)*100.), "%",
 
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
-                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0., 50.], multiplier=multiplier)
 
             if outfile is not None:
                 np.save(open(outfile, 'wb'), self.templateList['FermiDiffuse'].healpixCube)
@@ -457,7 +457,7 @@ class Analysis():
         else:
             healpixcube = np.load(infile)
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
-                             value=1, ApplyIRF=False, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                             value=1, ApplyIRF=False, sourceClass='GEN', limits=[0., 50.], multiplier=multiplier)
 
     def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
                tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3,
@@ -532,18 +532,18 @@ class Analysis():
 
 
         self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=fixSpectrum, fixNorm=False,
-                           value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                           value=1, ApplyIRF=True, sourceClass='GEN', limits=[0., 50.], multiplier=multiplier)
 
         if bremsfrac is None:
             self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0., 50.], multiplier=multiplier)
             self.AddTemplate(name='Pi0', healpixCube=comps_new['pi0'], fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0., 50.], multiplier=multiplier)
 
         else:
             self.AddTemplate(name='Pi0_Brems', healpixCube=comps_new['pi0']+bremsfrac*comps_new['brem'],
                                fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0., 50.], multiplier=multiplier)
 
 
     def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e5):
@@ -725,7 +725,7 @@ class Analysis():
 
         # Now each bin is in ph cm^-2 s^-1.  Apply IRF takes care of the rest.
         self.AddTemplate(healpixCube=healpixcube, name='Bubbles', fixSpectrum=fixSpectrum,
-                         fixNorm=False, limits=[0.0, None], value=1., ApplyIRF=True,
+                         fixNorm=False, limits=[0., 50.], value=1., ApplyIRF=True,
                          sourceClass='GEN', valueUnc=valueUnc)
 
     def GenExposureMap(self):

@@ -199,6 +199,8 @@ class like():
         #if self.ncall%500==0: print self.ncall, neg_loglikelihood
         #self.ncall+=1
 
+        if np.isnan(neg_loglikelihood):
+            neg_loglikelihood=1e10
         return neg_loglikelihood + chi2_ext/2.
         
         
@@ -217,7 +219,10 @@ class like():
         # cpu mode
         else:
             neg_loglikelihood = np.sum(self.psc_weights*(-self.flat_data*np.log(model)+model))
-                
+
+        if np.isnan(neg_loglikelihood):
+            neg_loglikelihood=1e10
+
         return neg_loglikelihood + chi2_ext/2.
         """)
     f.close()

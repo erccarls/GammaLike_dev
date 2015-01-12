@@ -73,8 +73,8 @@
       <file leaf-file-name="GammaLikelihood.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="84" max-vertical-offset="9432">
-              <caret line="23" column="53" selection-start-line="23" selection-start-column="53" selection-end-line="23" selection-end-column="53" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="2692" max-vertical-offset="9522">
+              <caret line="222" column="12" selection-start-line="222" selection-start-column="12" selection-end-line="222" selection-end-column="12" />
               <folding />
             </state>
           </provider>
@@ -83,9 +83,11 @@
       <file leaf-file-name="Analysis.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Analysis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33333334" vertical-offset="9318" max-vertical-offset="13770">
-              <caret line="548" column="104" selection-start-line="548" selection-start-column="104" selection-end-line="548" selection-end-column="104" />
-              <folding />
+            <state vertical-scroll-proportion="0.18333334" vertical-offset="2722" max-vertical-offset="13986">
+              <caret line="161" column="25" selection-start-line="161" selection-start-column="25" selection-end-line="161" selection-end-column="25" />
+              <folding>
+                <element signature="e#289#307#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -621,7 +623,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="6114" max-vertical-offset="13734">
           <caret line="375" column="69" selection-start-line="375" selection-start-column="69" selection-end-line="375" selection-end-column="69" />
-          <folding />
+          <folding>
+            <element signature="e#289#307#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -679,7 +683,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="4805" max-vertical-offset="13716">
           <caret line="295" column="20" selection-start-line="295" selection-start-column="20" selection-end-line="295" selection-end-column="20" />
-          <folding />
+          <folding>
+            <element signature="e#289#307#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -713,7 +719,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="12366" max-vertical-offset="13374">
           <caret line="724" column="0" selection-start-line="724" selection-start-column="0" selection-end-line="724" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#289#307#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -747,7 +755,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="10386" max-vertical-offset="11412">
           <caret line="614" column="0" selection-start-line="614" selection-start-column="0" selection-end-line="614" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#289#307#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -778,7 +788,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="1608" max-vertical-offset="6732">
           <caret line="115" column="47" selection-start-line="115" selection-start-column="47" selection-end-line="115" selection-end-column="47" />
-          <folding />
+          <folding>
+            <element signature="e#289#307#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -896,17 +908,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="84" max-vertical-offset="9432">
-          <caret line="23" column="53" selection-start-line="23" selection-start-column="53" selection-end-line="23" selection-end-column="53" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="2692" max-vertical-offset="9522">
+          <caret line="222" column="12" selection-start-line="222" selection-start-column="12" selection-end-line="222" selection-end-column="12" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Analysis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33333334" vertical-offset="9318" max-vertical-offset="13770">
-          <caret line="548" column="104" selection-start-line="548" selection-start-column="104" selection-end-line="548" selection-end-column="104" />
-          <folding />
+        <state vertical-scroll-proportion="0.18333334" vertical-offset="2722" max-vertical-offset="13986">
+          <caret line="161" column="25" selection-start-line="161" selection-start-column="25" selection-end-line="161" selection-end-column="25" />
+          <folding>
+            <element signature="e#289#307#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
