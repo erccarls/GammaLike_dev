@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="106cb39c-4895-4b73-a64c-c5a1bad85918" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Analysis.py" afterPath="$PROJECT_DIR$/Analysis.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GammaLikelihood.py" afterPath="$PROJECT_DIR$/GammaLikelihood.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Test Analysis.ipynb" afterPath="$PROJECT_DIR$/Test Analysis.ipynb" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -69,21 +70,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="GammaLikelihood.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="GammaLikelihood.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-11.612904" vertical-offset="0" max-vertical-offset="9558">
-              <caret line="25" column="4" selection-start-line="25" selection-start-column="4" selection-end-line="25" selection-end-column="57" />
+            <state vertical-scroll-proportion="0.3040331" vertical-offset="3558" max-vertical-offset="9450">
+              <caret line="219" column="70" selection-start-line="219" selection-start-column="70" selection-end-line="219" selection-end-column="70" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Analysis.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Analysis.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Analysis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.091003105" vertical-offset="11954" max-vertical-offset="14688">
-              <caret line="669" column="61" selection-start-line="669" selection-start-column="61" selection-end-line="669" selection-end-column="61" />
+            <state vertical-scroll-proportion="-94.0" vertical-offset="1568" max-vertical-offset="15048">
+              <caret line="249" column="61" selection-start-line="249" selection-start-column="61" selection-end-line="249" selection-end-column="61" />
               <folding>
                 <element signature="e#289#307#0" expanded="true" />
               </folding>
@@ -104,8 +105,8 @@
       <file leaf-file-name="Template.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Template.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-15.096774" vertical-offset="0" max-vertical-offset="828">
-              <caret line="26" column="18" selection-start-line="26" selection-start-column="17" selection-end-line="26" selection-end-column="18" />
+            <state vertical-scroll-proportion="-8.709678" vertical-offset="0" max-vertical-offset="828">
+              <caret line="15" column="88" selection-start-line="15" selection-start-column="88" selection-end-line="15" selection-end-column="88" />
               <folding />
             </state>
           </provider>
@@ -135,8 +136,8 @@
         <option value="$PROJECT_DIR$/Tools.py" />
         <option value="$PROJECT_DIR$/SourceMap.py" />
         <option value="$PROJECT_DIR$/DM.py" />
-        <option value="$PROJECT_DIR$/GammaLikelihood.py" />
         <option value="$PROJECT_DIR$/Analysis.py" />
+        <option value="$PROJECT_DIR$/GammaLikelihood.py" />
       </list>
     </option>
   </component>
@@ -536,7 +537,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="52" width="1920" height="1124" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -904,22 +905,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-11.612904" vertical-offset="0" max-vertical-offset="9558">
-          <caret line="25" column="4" selection-start-line="25" selection-start-column="4" selection-end-line="25" selection-end-column="57" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Template.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-15.096774" vertical-offset="0" max-vertical-offset="828">
-          <caret line="26" column="18" selection-start-line="26" selection-start-column="17" selection-end-line="26" selection-end-column="18" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/GenFermiData.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="594" max-vertical-offset="1998">
@@ -936,13 +921,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Template.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-8.709678" vertical-offset="0" max-vertical-offset="828">
+          <caret line="15" column="88" selection-start-line="15" selection-start-column="88" selection-end-line="15" selection-end-column="88" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Analysis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.091003105" vertical-offset="11954" max-vertical-offset="14688">
-          <caret line="669" column="61" selection-start-line="669" selection-start-column="61" selection-end-line="669" selection-end-column="61" />
+        <state vertical-scroll-proportion="-94.0" vertical-offset="1568" max-vertical-offset="15048">
+          <caret line="249" column="61" selection-start-line="249" selection-start-column="61" selection-end-line="249" selection-end-column="61" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.3040331" vertical-offset="3558" max-vertical-offset="9450">
+          <caret line="219" column="70" selection-start-line="219" selection-start-column="70" selection-end-line="219" selection-end-column="70" />
+          <folding />
         </state>
       </provider>
     </entry>

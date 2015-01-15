@@ -13,7 +13,7 @@ import imp
 
 
 def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30, tol=100000.,
-                  precision=1e-14):
+                  precision=1e-14, error=0.1):
     """
     Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py).
 
@@ -24,10 +24,10 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     :param niter_success: Setting for basinhopping algorithm.  See scipy docs.
     :param tol: EDM Tolerance for migrad convergence.
     :param precision: Migrad internal precision override.
+    :param error: Migrad initial param error to use.
     :returns (m, res):
             m: iminuit result object\n
             res: scipy.minimize result.  None if use_basinhopping==False
-
     """
 
     if analysis.binned_data is None:
@@ -68,6 +68,10 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     start = time.time()
     model, args = ['        model['+str(i)+']=' for i in range(analysis.binned_data.shape[0])], ''
 
+    # This list holds the bin-by bin cases if our analysis is running that
+    model_sep, args = ['        model['+str(i)+']=' for i in range(analysis.binned_data.shape[0])], ''
+
+
     # External constraint
     extConstraint ='        chi2_ext='
 
@@ -89,7 +93,7 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
             # Set initial value and limits 
             kwargs[key] = t.value  # default initial value
             kwargs['limit_'+key] = t.limits
-            kwargs['error_'+key] = .25
+            kwargs['error_'+key] = error
             kwargs['fix_'+key] = t.fixNorm
 
             if t.valueUnc is not None:
@@ -159,8 +163,6 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
 import numpy as np 
 import time 
 
-
-
 class like():
     def __init__(self, templateList, data, psc_weights):
         self.templateList = templateList
@@ -184,7 +186,6 @@ class like():
         # sum the models 
 """ + master_model +"""
 """ + extConstraint + """
-        
 
         #------------------------------------------------
         # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
@@ -201,15 +202,13 @@ class like():
         #if self.ncall%500==0: print self.ncall, neg_loglikelihood
         #self.ncall+=1
 
-        if np.isnan(neg_loglikelihood):
-            neg_loglikelihood=1e10
         return neg_loglikelihood + chi2_ext/2.
         
         
     def f2(self,x0):
         """+args+""" = x0
         model = np.zeros(shape=self.data.shape)
-""" + master_model +"""
+""" + master_model + """
 """ + extConstraint + """
     
         # gpu mode
@@ -221,9 +220,6 @@ class like():
         # cpu mode
         else:
             neg_loglikelihood = np.sum(self.psc_weights*(-self.flat_data*np.log(model)+model))
-
-        if np.isnan(neg_loglikelihood):
-            neg_loglikelihood=1e10
 
         return neg_loglikelihood + chi2_ext/2.
         """)
@@ -242,7 +238,7 @@ class like():
     start = time.time()
     like = foo.like(analysis.templateList, masked_data, analysis.psc_weights[:, mask_idx].astype(np.float32))
 
-    # Init migrad 
+    # Init migrad
     m = Minuit(like.f, **kwargs)
     m.tol = tol  # TODO: why does m.tol need to be so big to converge when errors are very small????
     #m.migrad(ncall=200000, precision=1e-15)
