@@ -10,7 +10,7 @@ import numpy as np
 from scipy.optimize import *
 import time
 import imp
-
+import copy
 
 def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30, tol=100000.,
                   precision=1e-14, error=0.1):
@@ -67,10 +67,6 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     # code. 
     start = time.time()
     model, args = ['        model['+str(i)+']=' for i in range(analysis.binned_data.shape[0])], ''
-
-    # This list holds the bin-by bin cases if our analysis is running that
-    model_sep, args = ['        model['+str(i)+']=' for i in range(analysis.binned_data.shape[0])], ''
-
 
     # External constraint
     extConstraint ='        chi2_ext='
@@ -283,6 +279,219 @@ class like():
         return m, None, None
     
           
+
+
+def RunLikelihoodBinByBin(bin, analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30,
+                          tol=100000., precision=1e-14, error=0.1):
+    """
+    Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py). Similar to
+    RunLikelihood, but runs each energy bin independently (For cases where each Ebin is decoupled in the fit).
+    This is optimized for this case.
+
+    :param bin: The energy bin to run the fit on.
+    :param analysis: An Analysis object with valid binned_data and at least one template in templateList.
+    :param print_level: Verbosity for the fitting 0=quiet, 1=full output.
+    :param use_basinhopping: Slower, but more accurate use of scipy basinhopping algorithm after migrad convergence
+    :param start_fresh: If use_basinhopping==True, then start_fresh==True does not run migrad before basinhopping.
+    :param niter_success: Setting for basinhopping algorithm.  See scipy docs.
+    :param tol: EDM Tolerance for migrad convergence.
+    :param precision: Migrad internal precision override.
+    :param error: Migrad initial param error to use.
+    :returns m: iminuit result object\n
+    """
+
+    # Some Error checking.
+    if analysis.binned_data is None:
+        raise Exception("No binned photon data.")
+
+    # Check that the input data all has the correct dimensionality.
+    shape = analysis.binned_data.shape
+    for key, t in analysis.templateList.items():
+        if t.healpixCube.shape != shape:
+            raise Exception("Input template " + key + " does not match the shape of the binned data.")
+        if t.fixNorm is False and t.fixSpectrum is True:
+            raise Exception("Input template " + key + " has fixed spectrum but not fixed normalization. This implies"
+                            " that fitting cannot be done bin-by-bin.  Must use full RunLikelihood() fit.")
+
+    if analysis.psc_weights is None:
+        print 'Warning! Pixel weights not initialized.  Default to equal weighting.'
+
+    #---------------------------------------------------------------------------
+    # Select only unmasked pixels.  Less expensive to do here rather than later.
+    start = time.time()
+    mask_idx = np.where(analysis.mask != 0)[0]
+    templateList = copy.deepcopy(analysis.templateList)
+    # Iterate through templates and apply masking
+    for key, t in analysis.templateList.items():
+
+        tmpcube = np.zeros(shape=(t.healpixCube.shape[0], len(mask_idx)))
+
+        for Ebin in range(t.healpixCube.shape[0]):
+            tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx]
+        templateList[key].healpixCubeMasked = tmpcube
+
+        templateList[key].healpixCube = None  # Open memory by deleting the copy's full size templates
+
+    # mask the data as well.
+    masked_data = analysis.binned_data[:, mask_idx].astype(np.float32)
+    #if mask_idx.shape[0] < 10:
+    #    raise Exception('Masked number of pixels <10. Has mask been initialized?')
+
+    if print_level > 0:
+        print "Masking completed in", "{:10.4e}".format(time.time()-start), 's'
+
+    #---------------------------------------------------------------------------
+    # We first enumerate all of the fit parameters and add them to the args and
+    # model strings.  These strings will then be used to generate the likelihood
+    # code.
+    start = time.time()
+    model, args = '        model=', ''
+
+    # External constraint
+    extConstraint ='        chi2_ext='
+
+    # pyminut initial step size and print level
+    kwargs = {'errordef': 0.5, 'print_level': print_level}
+
+
+    # Iterate over the input templates and add each template to the fitting functions args.
+    for key, t in analysis.templateList.items():
+
+        if t.fixSpectrum:
+            # Just add an overall normalization parameter and the same for the model.
+            args += key + ','
+            model += key + "*self.templateList['"+key+"'].healpixCubeMasked["+str(bin)+"]+"
+            # Set initial value and limits
+            kwargs[key] = t.value  # default initial value
+            kwargs['limit_'+key] = t.limits
+            kwargs['error_'+key] =  0.0 # This component must be fixed in bin-by-bin if the spectrum is fixed.
+            kwargs['fix_'+key] = True
+
+        else:
+            # Add a normalization component for each spectral bin in each template.
+            args += key + '_' + str(bin)+','
+            model += key + '_' + str(bin) + "*self.templateList['"+key+"'].healpixCubeMasked["+str(bin)+"]+"
+            kwargs['error_' + key + '_' + str(bin)] = error  # Initial step size
+            if type(t.value) == type([]) or type(t.value) == type(np.array([])):
+                kwargs[key + '_' + str(bin)] = t.value[bin]  # default initial value
+            else:
+                kwargs[key + '_' + str(bin)] = t.value  # default initial value
+
+            if t.valueUnc is not None:
+                extConstraint += '(('+key + '_' + str(bin) + '-1)/' + str(t.valueUnc[bin]) + ')**2+'
+
+            kwargs['limit_'+key + '_' + str(bin)] = t.limits
+            # If we are supposed to fix the values, then fix them.
+            kwargs['fix_'+key + '_' + str(bin)] = t.fixNorm
+
+    # remove the trailing '+' sign and add newline.
+    model = model[:-1] + '\n'
+    extConstraint = extConstraint[:-1]
+    if extConstraint is '        chi2_ext':
+        extConstraint = '        chi2_ext=0'
+
+    #---------------------------------------------------------------------------
+    # Generate the function! There are probably better ways to do this, but
+    # this works to generate the required function signatures dynamically via
+    # code generation.
+
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    f.write("""
+import numpy as np
+import time
+
+class like():
+    def __init__(self, templateList, data, psc_weights):
+        self.templateList = templateList
+        self.data = data
+        self.use_cuda = True
+        self.psc_weights = psc_weights
+        try:
+            import cudamat as cm
+            self.cm = cm
+            cm.cublas_init()
+            self.cmData = cm.CUDAMatrix(data)
+            self.cm_psc_weights = cm.CUDAMatrix(psc_weights)
+        except:
+            self.use_cuda = False
+        self.ncall=0
+
+
+    def f(self,"""+args+"""):
+        # init model array
+        #model = np.zeros(shape=(1, self.templateList[self.templateList.keys()[0]].healpixCubeMasked.shape[1]))
+        model = np.zeros(shape=self.data.shape)
+        # sum the models
+""" + model +"""
+""" + extConstraint + """
+
+        #------------------------------------------------
+        # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
+        self.use_cuda=False
+        if self.use_cuda == False:
+
+            neg_loglikelihood = np.sum(self.psc_weights*(model-self.data*np.log(model)))
+
+        #------------------------------------------------
+        # Uncomment here for GPU mode using CUDA + cudamat libraries
+        else:
+            cmModel = self.cm.CUDAMatrix(np.array([model,]))
+            cmModel_orig = cmModel.copy()
+            neg_loglikelihood = cmModel_orig.subtract(self.cm.log(cmModel).mult(self.cmData)).mult(self.cm_psc_weights).sum(axis=0).sum(axis=1).asarray()[0,0]
+
+        #if self.ncall%500==0: print self.ncall, neg_loglikelihood
+        #self.ncall+=1
+        return neg_loglikelihood + chi2_ext/2.
+
+        """)
+    f.close()
+    #---------------------------------------------------------------------------
+    # Now load the source
+    foo = imp.load_source('tmplike', f.name)
+    print 'Write likelihood tempfile to ', f.name
+    if print_level > 0:
+        print "Code generation completed in", "{:10.4e}".format(time.time()-start), 's'
+        try:
+            import cudamat
+            print "Using GPU mode. (Successful import of cudamat module.)"
+        except:
+            print "Fallback to CPU mode.  (Failed to import cudamat libraries.)"
+
+    start = time.time()
+
+    # like = foo.like(templateList,
+    #                 np.array([masked_data[bin],]),
+    #                 np.array([analysis.psc_weights[bin, mask_idx].astype(np.float32), ]))
+    like = foo.like(templateList,
+                    np.array(masked_data[bin]),
+                    np.array(analysis.psc_weights[bin, mask_idx].astype(np.float32)))
+
+
+    # print analysis.templateList['DM'].healpixCube[0].shape
+    # import healpy
+    # from matplotlib import pyplot as plt
+    # test = np.zeros(12*256**2)
+    # #test[mask_idx] = templateList['DM'].healpixCubeMasked[0]
+    # test[mask_idx] = masked_data
+    # healpy.mollview(test)
+    # plt.show()
+
+
+    foo.like.use_cuda = False
+
+    # Init migrad
+    m = Minuit(like.f, **kwargs)
+    m.tol = tol  # TODO: why does m.tol need to be so big to converge when errors are very small????
+    m.migrad(ncall=2e5, precision=precision)
+
+    #m.minos(maxcall=10000,sigma=2.)
+
+    if print_level > 0:
+        print "Migrad completed fitting", "{:10.2e}".format(time.time()-start), 's'
+
+    return m
+
 
 
 

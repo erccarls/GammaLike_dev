@@ -168,7 +168,7 @@ class Analysis():
         return mask
 
     def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
-                                    fixSpectrum=False, fixNorm=False, limits=[0.0, None], value=1,):
+                                    fixSpectrum=False, fixNorm=False, limits=[None, None], value=1,):
         """
         Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted
         to a healpix template.
@@ -190,7 +190,7 @@ class Analysis():
 
 
     def AddPointSourceTemplate(self, pscmap=None, name='PSC', fixNorm=False,
-                               limits=[0.0, None], value=1, multiplier=1.):
+                               limits=[None, None], value=1, multiplier=1.):
         """
         Adds a point source map to the list of templates.
 
@@ -257,7 +257,7 @@ class Analysis():
                 print '         --------------------------------------------------------------------------------------'
 
 
-    def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[0.0, None], value=1, ApplyIRF=True,
+    def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[None, None], value=1, ApplyIRF=True,
                     sourceClass='GEN', multiplier=1., valueUnc=None):
         """
         Add Template to the template list.
@@ -339,10 +339,10 @@ class Analysis():
         # Add the template to the list. 
         # IRFs are applied during add template.  This multiplies by cm^2 s
         self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=fixSpectrum,
-                         fixNorm=fixNorm, limits=[0.0, None], value=1, ApplyIRF=True, sourceClass='ISO', valueUnc=valueUnc)
+                         fixNorm=fixNorm, limits=[None, None], value=1, ApplyIRF=True, sourceClass='ISO', valueUnc=valueUnc)
 
     def AddDMTemplate(self, profile='NFW', decay=False, gamma=1, axesratio=1, offset=(0, 0), r_s=20.,
-                      spec_file=None, limits=[0.0, None]):
+                      spec_file=None, limits=[None, None]):
         """
         Generates a dark matter template and adds it to the current template stack.
 
@@ -407,7 +407,7 @@ class Analysis():
             for i in range(self.n_bins):
                 healpixcube[i] = tmp*quad(spec, self.bin_edges[i], self.bin_edges[i+1])[0]
             self.AddTemplate(name='DM', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False, limits=limits,
-                             value=1, ApplyIRF=True, sourceClass='GEN')
+                             value=1., ApplyIRF=True, sourceClass='GEN')
         return tmp
 
 
@@ -467,7 +467,7 @@ class Analysis():
                 print '\rRemapping Fermi Diffuse Model to Healpix Grid %.2f' % ((float(i+1)/self.n_bins)*100.), "%",
 
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
-                             value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                             value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
 
             if outfile is not None:
                 np.save(open(outfile, 'wb'), self.templateList['FermiDiffuse'].healpixCube)
@@ -475,7 +475,7 @@ class Analysis():
         else:
             healpixcube = np.load(infile)
             self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
-                             value=1, ApplyIRF=False, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                             value=1., ApplyIRF=False, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
 
     def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
                tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3,
@@ -564,22 +564,22 @@ class Analysis():
 
 
         self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=fixSpectrum, fixNorm=False,
-                           value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                           value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
 
         if bremsfrac is None:
             self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
             self.AddTemplate(name='Pi0', healpixCube=comps_new['pi0'], fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
 
         else:
             self.AddTemplate(name='Pi0_Brems', healpixCube=comps_new['pi0']+bremsfrac*comps_new['brem'],
                                fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1, ApplyIRF=True, sourceClass='GEN', limits=[0.0, None], multiplier=multiplier)
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
 
 
-    def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e5,
-                      precision=1e-10, error=0.1):
+    def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e2,
+                      precision=None, error=0.1, minos=True):
         """
         Runs the likelihood analysis on the current templateList.
 
@@ -590,32 +590,89 @@ class Analysis():
         :param tol: Tolerance for EDM in migrad convergence.
         :param precision: Migrad internal precision override.
         :param error: Migrad initial param error to use.
+        :param minos: If true, runs minos to determine fitting errors. False uses Hesse method.
         :returns m, res: m is an iMinuit object and res is a scipy minimization object.
         """
-        self.m, self.res, self.res_vals = GammaLikelihood.RunLikelihood(self, print_level=print_level,
-                                                                        use_basinhopping=use_basinhopping,
-                                                                        start_fresh=start_fresh,
-                                                                        niter_success=niter_success,
-                                                                        tol=tol,
-                                                                        precision=precision,
-                                                                        error=error
-        )
 
-        # Run through the templates and update values to the best fit.
+        # First, check whether all bins need to be fit simultaneously, or can be decoupled.
+        binbybin = True
         for key, t in self.templateList.items():
-            if t.fixSpectrum:
-                if self.res_vals is not None:
-                    t.value = self.res_vals[key]
-                else:
-                    t.value = self.m.values[key]
-                    t.valueError = self.m.errors[key]
+            if not t.fixNorm and t.fixSpectrum:
+                binbybin = False
 
-            else:
-                if self.res is not None:
-                    t.value = np.array([self.res_vals[key+'_'+str(i)] for i in range(self.n_bins)])
+        if not binbybin:
+                self.m, self.res, self.res_vals = GammaLikelihood.RunLikelihood(self, print_level=print_level,
+                                                                                use_basinhopping=use_basinhopping,
+                                                                                start_fresh=start_fresh,
+                                                                                niter_success=niter_success,
+                                                                                tol=tol,
+                                                                                precision=precision,
+                                                                                error=error)
+                # -------------------------------------------------------------
+                # UPDATE THE TEMPLATE VALUES AND ERRORS WITH THE FIT RESULTS
+                for key, t in self.templateList.items():
+                    if t.fixSpectrum:
+                        if self.res_vals is not None:
+                            t.value = self.res_vals[key]
+                        else:
+                            t.value = self.m.values[key]
+                            t.valueError = self.m.errors[key]
+
+                    else:
+                        if self.res is not None:
+                            t.value = np.array([self.res_vals[key+'_'+str(i)] for i in range(self.n_bins)])
+                        else:
+                            t.value = np.array([self.m.values[key+'_'+str(i)] for i in range(self.n_bins)])
+                            t.valueError = np.array([self.m.errors[key+'_'+str(i)] for i in range(self.n_bins)])
+
+        # Otherwise, Run the bin-by-bin fit.
+        else:
+            results = [GammaLikelihood.RunLikelihoodBinByBin(bin=i, analysis=self, print_level=1,precision=1e-10, tol=1e2)
+                       for i in range(self.n_bins)]
+            # Calculate Fitting Errors.
+            hesseList, minosList = [], []
+            for m in results:
+                try:
+                    if minos:
+                        minosList.append(m.minos())
+                    else:
+                        minosList.append(None)
+                except:  # Sometimes we don't converge...
+                    minosList.append(None)
+                try:
+                    hesseList.append(m.hesse())
+                except:  # Sometimes we don't converge...
+                    hesseList.append(None)
+
+            # -------------------------------------------------------------
+            # UPDATE THE TEMPLATE VALUES AND ERRORS WITH THE FIT RESULTS
+            for key, t in self.templateList.items():
+                if t.fixNorm:
+                    continue
                 else:
-                    t.value = np.array([self.m.values[key+'_'+str(i)] for i in range(self.n_bins)])
-                    t.valueError = np.array([self.m.errors[key+'_'+str(i)] for i in range(self.n_bins)])
+                    t.value = np.zeros(self.n_bins)
+                    t.valueError = []
+            for i_E in range(self.n_bins):
+                if not results[i_E].get_fmin().is_valid:
+                    print 'WARNING: Fit for bin', i_E, 'is reported invalid'
+                if minosList[i_E] is None:
+                    for h in hesseList[i_E]:
+                        name = "_".join(h['name'].split('_')[:-1])
+                        if h['is_fixed']:
+                            continue
+                        t = self.templateList[name]
+
+                        t.value[i_E] = h['value']
+                        t.valueError.append(h['error'])
+                else:
+                    for key, err in minosList[i_E].items():
+                        name = "_".join(key.split('_')[:-1])
+                        t = self.templateList[name]
+                        t.value[i_E] = err['min']
+                        t.valueError.append(np.array((err['lower'], err['upper'])))
+            t.valueError = np.array(t.valueError)
+            # END UPDATE TEMPLATE SECTION
+            # -------------------------------------------------------------
 
 
         self.fitted = True
@@ -668,6 +725,9 @@ class Analysis():
         else:
             t = self.templateList[name]
 
+        if t.valueError is None and t.fixNorm is False and name is not 'Data':
+            print 'Warning! No fitting errors for component', name
+
         flux, errors = [], []
         # Iterate over each energy bin
         for i_E in range(self.n_bins):
@@ -689,8 +749,12 @@ class Analysis():
                 stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)
                               / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
                 count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value
-                if name is not 'Data':
-                    fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError
+                # No fit errors on data.
+                if name is not 'Data' and t.fixNorm is False:
+                    try:
+                        fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError
+                    except:
+                        fit_error = 0.
                 if t.fixNorm:
                     fit_error = 0.
 
@@ -699,7 +763,7 @@ class Analysis():
                 stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value[i_E])
                               / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
                 if name is not 'Data':
-                    fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError[i_E]
+                        fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError[i_E]
                 if t.fixNorm:
                     fit_error = 0.
                 count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value[i_E]
@@ -709,7 +773,11 @@ class Analysis():
             if name is 'Data':
                 errors.append(np.array(stat_error))
             else:
-                errors.append(np.sqrt(np.array(stat_error)**2+np.array(fit_error)**2))
+                if np.ndim(fit_error) == 0:
+                    errors.append(np.sqrt(np.array(stat_error)**2+np.array(fit_error)**2))
+                if np.ndim(fit_error) == 1:
+                    errors.append(np.array((np.sqrt(np.array(stat_error)**2+np.array(fit_error[0])**2),
+                                            np.sqrt(np.array(stat_error)**2+np.array(fit_error[1])**2))))
 
         return self.central_energies, np.array(flux), np.array(errors)
 
@@ -784,7 +852,7 @@ class Analysis():
 
         # Now each bin is in ph cm^-2 s^-1.  Apply IRF takes care of the rest.
         self.AddTemplate(healpixCube=healpixcube, name='Bubbles', fixSpectrum=fixSpectrum,
-                         fixNorm=False, limits=[0.0, None], value=1., ApplyIRF=True,
+                         fixNorm=False, limits=[None, None], value=1., ApplyIRF=True,
                          sourceClass='GEN', valueUnc=valueUnc)
 
     def GenExposureMap(self):
