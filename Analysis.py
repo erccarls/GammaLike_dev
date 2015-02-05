@@ -85,6 +85,7 @@ class Analysis():
         self.psc_weights = None  # Pixel weighting for likelihood analysis
         self.expMap =None        # Stores the precomputed exposure map in memory.
         self.central_energies = None  # Log-central energies for each bin.
+        self.loglike = None  # Stores the fit likelihood value.
 
         prefix_n_bins = len(prefix_bins)-1
         # --------------------------------------------------------------------
@@ -258,7 +259,7 @@ class Analysis():
 
 
     def AddTemplate(self, name, healpixCube, fixSpectrum=False, fixNorm=False, limits=[None, None], value=1, ApplyIRF=True,
-                    sourceClass='GEN', multiplier=1., valueUnc=None):
+                    sourceClass='GEN', multiplier=1., valueUnc=None, noPSF=False):
         """
         Add Template to the template list.
 
@@ -270,7 +271,9 @@ class Analysis():
         :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
         :param    limits:      Specify range of template normalizations.
         :param    value:       Initial value for the template normalization.
+        :param    valueUnc:    Uncertainty on the fitting value. This is set automatically after fitting unless fixedNorm==True.
         :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
+        :param    noPSF: Defaults to true, but can be disabled for speed.
         """
 
         self.fitted = False
@@ -289,7 +292,7 @@ class Analysis():
                     # This is already multithreaded in healpy.
                     healpixCube[i_E] = Tools.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
                                                       self.psfFile, self.expCube, multiplier=multiplier,
-                                                      expMap=self.expMap[i_E])
+                                                      expMap=self.expMap[i_E], noPSF=noPSF)
 
         # Instantiate the template object. 
         template = Template.Template(healpixCube.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass,
@@ -479,7 +482,7 @@ class Analysis():
 
     def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
                tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3,
-               fixSpectrum=True):
+               fixSpectrum=True, noPSF=False):
         """
         This method takes a base analysis prefix, along with an X_CO profile and generates the combined diffuse template,
         or components of the diffuse template.
@@ -491,7 +494,8 @@ class Analysis():
         :param bremsfrac: If None, brems is treated as independent.  Otherwise Brem normalization
             is linked to Pi0 normalization, scaled by a factor bremsfrac.
         :param E_subsample: Number of energy sub bins to use when integrating over each energy band.
-        :para fixSpectrum: Allow the spectrum to float in each energy bin.
+        :param fixSpectrum: Allow the spectrum to float in each energy bin.
+        :param noPSF: Do not apply PSF if True.  Can enhance speed.
         """
 
         #---------------------------------------------------------------------------------
@@ -564,18 +568,18 @@ class Analysis():
 
 
         self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=fixSpectrum, fixNorm=False,
-                           value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
+                           value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
 
         if bremsfrac is None:
             self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
             self.AddTemplate(name='Pi0', healpixCube=comps_new['pi0'], fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
 
         else:
             self.AddTemplate(name='Pi0_Brems', healpixCube=comps_new['pi0']+bremsfrac*comps_new['brem'],
                                fixSpectrum=fixSpectrum, fixNorm=False,
-                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
 
 
     def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e2,
@@ -627,7 +631,7 @@ class Analysis():
 
         # Otherwise, Run the bin-by-bin fit.
         else:
-            results = [GammaLikelihood.RunLikelihoodBinByBin(bin=i, analysis=self, print_level=1,precision=1e-10, tol=1e2)
+            results = [GammaLikelihood.RunLikelihoodBinByBin(bin=i, analysis=self, print_level=print_level, precision=precision, tol=tol)
                        for i in range(self.n_bins)]
             # Calculate Fitting Errors.
             hesseList, minosList = [], []
@@ -652,9 +656,15 @@ class Analysis():
                 else:
                     t.value = np.zeros(self.n_bins)
                     t.valueError = []
+                    self.loglike = []
+
             for i_E in range(self.n_bins):
                 if not results[i_E].get_fmin().is_valid:
                     print 'WARNING: Fit for bin', i_E, 'is reported invalid'
+
+                # Append the log-likelihood of each bin.
+                self.loglike.append(results[i_E].fval)
+
                 if minosList[i_E] is None:
                     for h in hesseList[i_E]:
                         name = "_".join(h['name'].split('_')[:-1])
@@ -670,7 +680,8 @@ class Analysis():
                         t = self.templateList[name]
                         t.value[i_E] = err['min']
                         t.valueError.append(np.array((err['lower'], err['upper'])))
-            t.valueError = np.array(t.valueError)
+            print t.valueError
+            #t.valueError = np.array(t.valueError)
             # END UPDATE TEMPLATE SECTION
             # -------------------------------------------------------------
 
@@ -888,8 +899,45 @@ class Analysis():
         self.psc_weights = 1./((psc/(f_psc*diff_model))**alpha_psc+1)
 
 
+    def SaveFit(self, filename=None):
+        '''
+        Returns a dictionary of fit results and saves a pickle object to the specified filepath if not None.
+        This contains the following entries:\n
+        'loglike': A single value, or list of the log likelihoods for each energy bin.\n
+        'energies': The central energy of each bin (in log-space).\n
 
+        For each template in the fit there is also a key corresponding to the template name
+         which has a dictionary value containing:\n
+            'flux': dNdE in [s^-1 cm^-2 sr^-1 MeV^-1]\n
+            'fluxunc': Statistical (and fitting) error on dNdE in same units (possibly 2-col asymmetric errors)\n
+        :param filename: filename to save the dictionary (saved as a pickle object).
+        :return: The dict saved above
+        '''
 
+        saveDict = {'loglike': self.loglike, 'energies': self.central_energies}
+
+        for key, t in self.templateList.items():
+            e, flux, fluxunc = self.GetSpectrum(key)
+            saveDict[key] = {'flux': flux, 'fluxunc': fluxunc}
+        # Also append the data.
+        e, flux, fluxunc = self.GetSpectrum('Data')
+        saveDict['Data'] = {'flux': flux, 'fluxunc': fluxunc}
+
+        if filename is not None:
+            pickle.dump(saveDict, open(filename, 'wb'))
+
+        return saveDict
+
+    def ResetFit(self):
+        '''
+        Resets the fit values and initial fitting errors back to the defaults.  If fits are not converging after changing
+        out some templates, use this.  Does not change values for fixed templates.
+        '''
+
+        for key, t in self.templateList.items():
+            if not t.fixNorm:
+                t.value = 1.
+                t.valueError = .1
 
 
 

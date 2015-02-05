@@ -13,7 +13,7 @@ import imp
 import copy
 
 def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30, tol=100000.,
-                  precision=1e-14, error=0.1):
+                  precision=1e-14, error=0.1, force_cpu=False):
     """
     Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py).
 
@@ -160,7 +160,7 @@ import numpy as np
 import time 
 
 class like():
-    def __init__(self, templateList, data, psc_weights):
+    def __init__(self, templateList, data, psc_weights, force_cpu):
         self.templateList = templateList
         self.data = data
         self.use_cuda = True
@@ -170,8 +170,12 @@ class like():
             self.cm = cm
             cm.cublas_init()
             self.cmData = cm.CUDAMatrix(data)
+            cm.CUDAMatrix.init_random(0)
             self.cm_psc_weights = cm.CUDAMatrix(psc_weights)
         except:
+            self.use_cuda = False
+
+        if force_cpu:
             self.use_cuda = False
         self.ncall=0
 
@@ -186,13 +190,14 @@ class like():
         #------------------------------------------------
         # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
         if self.use_cuda == False:
-            neg_loglikelihood_cpu = np.sum(self.psc_weights*(model-self.data*np.log(model)))
+            neg_loglikelihood = np.sum(self.psc_weights*(model-self.data*np.log(model)))
         
         #------------------------------------------------
         # Uncomment here for GPU mode using CUDA + cudamat libraries
         else:
             cmModel = self.cm.CUDAMatrix(model)
             cmModel_orig = cmModel.copy()
+            self.cm.cublas_init()
             neg_loglikelihood = cmModel_orig.subtract(self.cm.log(cmModel).mult(self.cmData)).mult(self.cm_psc_weights).sum(axis=0).sum(axis=1).asarray()[0,0]
 
         #if self.ncall%500==0: print self.ncall, neg_loglikelihood
@@ -232,7 +237,7 @@ class like():
             print "Fallback to CPU mode.  (Failed to import cudamat libraries.)"
 
     start = time.time()
-    like = foo.like(analysis.templateList, masked_data, analysis.psc_weights[:, mask_idx].astype(np.float32))
+    like = foo.like(analysis.templateList, masked_data, analysis.psc_weights[:, mask_idx].astype(np.float32), force_cpu)
 
     # Init migrad
     m = Minuit(like.f, **kwargs)
@@ -282,7 +287,7 @@ class like():
 
 
 def RunLikelihoodBinByBin(bin, analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30,
-                          tol=100000., precision=1e-14, error=0.1):
+                          tol=100000., precision=1e-14, error=0.1, ignoreError=False):
     """
     Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py). Similar to
     RunLikelihood, but runs each energy bin independently (For cases where each Ebin is decoupled in the fit).
@@ -309,7 +314,7 @@ def RunLikelihoodBinByBin(bin, analysis, print_level=0, use_basinhopping=False, 
     for key, t in analysis.templateList.items():
         if t.healpixCube.shape != shape:
             raise Exception("Input template " + key + " does not match the shape of the binned data.")
-        if t.fixNorm is False and t.fixSpectrum is True:
+        if t.fixNorm is False and t.fixSpectrum is True and ignoreError is False:
             raise Exception("Input template " + key + " has fixed spectrum but not fixed normalization. This implies"
                             " that fitting cannot be done bin-by-bin.  Must use full RunLikelihood() fit.")
 
@@ -387,8 +392,8 @@ def RunLikelihoodBinByBin(bin, analysis, print_level=0, use_basinhopping=False, 
     # remove the trailing '+' sign and add newline.
     model = model[:-1] + '\n'
     extConstraint = extConstraint[:-1]
-    if extConstraint is '        chi2_ext':
-        extConstraint = '        chi2_ext=0'
+    if extConstraint == '        chi2_ext':
+        extConstraint = '        chi2_ext=0.'
 
     #---------------------------------------------------------------------------
     # Generate the function! There are probably better ways to do this, but
@@ -483,7 +488,7 @@ class like():
     # Init migrad
     m = Minuit(like.f, **kwargs)
     m.tol = tol  # TODO: why does m.tol need to be so big to converge when errors are very small????
-    m.migrad(ncall=2e5, precision=precision)
+    m.migrad(ncall=5e4, precision=precision)
 
     #m.minos(maxcall=10000,sigma=2.)
 

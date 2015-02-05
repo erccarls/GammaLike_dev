@@ -5,14 +5,19 @@ def GenGaldef(
     n_spatial_dimensions=3, 
     dx=1., # kpc for dx and dy propagation grid
     dz=.1, # kpc for dz propagation grid
-    zmax=4, # halo half-height 
+    zmax=6, # halo half-height 
     healpix_order=7,
     IC_isotropic=0,
     computeBremss=0,
     secondary_leptons=1,
     secondary_hadrons=1,
     source_model=1,
-    spiral_fraction=0.):
+    spiral_fraction=0.,
+    skymap_format=3,
+    single_component=0,
+    H2_filename = 'CO_PEB_galprop_8500.fits.gz',
+    HI_filename = 'HI_NS_galprop_r8500_interp75.fits.gz'
+    ):
     
     galdef_string='''
 Title                = Lorimer distribution, z_h = 4, R_h = 20, T_S = 150, and E(B-V) cut = 5
@@ -24,11 +29,11 @@ z_min                = '''+str(-zmax)+'''      min z
 z_max                = '''+str(zmax)+'''      max z 
 dz                   = '''+str(dz)+'''   delta z
 
-x_min                =-15.0   min x 
-x_max                =+15.0   max x 
+x_min                =-20.0   min x 
+x_max                =+20.0   max x 
 dx                   =  '''+str(dx)+'''   delta x
-y_min                =-15.0   min y 
-y_max                =+15.0   max y 
+y_min                =-20.0   min y 
+y_max                =+20.0   max y 
 dy                   =  '''+str(dx)+'''   delta y
 
 p_min                =1000    min momentum (MV)
@@ -50,23 +55,23 @@ nu_synch_min         = 1.0e6   min synchrotron frequency (Hz)
 nu_synch_max         = 1.0e10  max synchrotron frequency (Hz)
 nu_synch_factor      = 2.0         synchrotron frequency factor
 
-long_min             =  0.25  gamma-ray intensity skymap longitude minimum (deg);   0 -automatic binning  required to get correct results!
-long_max             =359.75  gamma-ray intensity skymap longitude maximum (deg); 360 -automatic binning
-lat_min              =-89.75  gamma-ray intensity skymap latitude  minimum (deg); -90 -automatic binning
-lat_max              =+89.75  gamma-ray intensity skymap latitude  maximum (deg); +90 -automatic binning
-d_long               = 0.5    gamma-ray intensity skymap longitude binsize (deg)
-d_lat                = 0.5    gamma-ray intensity skymap latitude  binsize (deg)
+long_min             =  0.125  gamma-ray intensity skymap longitude minimum (deg);   0 -automatic binning  required to get correct results!
+long_max             =359.875  gamma-ray intensity skymap longitude maximum (deg); 360 -automatic binning
+lat_min              =-89.875  gamma-ray intensity skymap latitude  minimum (deg); -90 -automatic binning
+lat_max              =+89.875  gamma-ray intensity skymap latitude  maximum (deg); +90 -automatic binning
+d_long               = 0.25    gamma-ray intensity skymap longitude binsize (deg)
+d_lat                = 0.25    gamma-ray intensity skymap latitude  binsize (deg)
 healpix_order        = '''+str(healpix_order)+'''      order for healpix skymaps.  7 gives ~0.5 deg and it changes by an order of 2
 lat_substep_number   = 1      latitude bin splitting (0,1=no split, 2=split in 2...)
-LoS_step             = 0.01   kpc, Line of Sight (LoS) integration step
+LoS_step             = 0.02   kpc, Line of Sight (LoS) integration step
 LoS_substep_number   = 1      number of substeps per LoS integration step (0,1=no substeps)
 
-D0_xx                = 5.35907e+28     diffusion coefficient at reference rigidity
+D0_xx                = 8.3e+28     diffusion coefficient at reference rigidity
 D_rigid_br           =4.0e3    reference rigidity for diffusion coefficient in MV
 D_g_1                = 0.33    diffusion coefficient index below reference rigidity
 D_g_2                = 0.33    diffusion coefficient index above reference rigidity
-diff_reacc           =1        0=no reacc.; 1,2=incl.diff.reacc.; -1==beta^3 Dxx; 11=Kolmogorov+damping; 12=Kraichnan+damping
-v_Alfven             = 33.4303         Alfven speed in km s-1
+diff_reacc           = 1        0=no reacc.; 1,2=incl.diff.reacc.; -1==beta^3 Dxx; 11=Kolmogorov+damping; 12=Kraichnan+damping
+v_Alfven             = 32.7         Alfven speed in km s-1
 
 damping_p0           = 1.e6    MV -some rigidity (where CR density is low)
 damping_const_G      = 0.02    a const derived from fitting B/C
@@ -74,7 +79,7 @@ damping_max_path_L   = 3.e21   Lmax~1 kpc, max free path
 
 convection           =0        1=include convection
 v0_conv              =0.       km s-1        v_conv=v0_conv+dvdz_conv*dz   
-dvdz_conv            =10.      km s-1 kpc-1  v_conv=v0_conv+dvdz_conv*dz
+dvdz_conv            =0.      km s-1 kpc-1  v_conv=v0_conv+dvdz_conv*dz
 
 nuc_rigid_br         = 11491.1      reference rigidity for nucleus injection index in MV
 nuc_g_1              = 1.87944        nucleus injection index below reference rigidity
@@ -89,14 +94,14 @@ electron_rigid_br    = 2.20561e+06      reference rigidity for electron injectio
 electron_g_2         = 4        electron injection index index above reference rigidity
 
 He_H_ratio           = 0.11     He/H of ISM, by number
-n_X_CO               = 3
+n_X_CO               = 9
 X_CO                 = 2.0E20  conversion factor from CO integrated temperature to H2 column density
 X_CO_parameters_0    = 0.597733e20
 X_CO_parameters_1    = -0.100183
 X_CO_parameters_2    = 0.001284e20
 X_CO_parameters_3    = 0.360597
-COR_filename         = rbands_co10mm_v2_2001_qdeg.fits.gz
-HIR_filename         = rbands_hi12_v2_qdeg_zmax1_Ts150_EBV_mag2_limit.fits.gz  rbands_hi10_garbage.fits  
+COR_filename         = rbands_co10mm_v3_2001_qdeg.fits.gz
+HIR_filename         = rbands_hi12_v5_hdeg_zmax1_Ts125.fits.gz
 
 B_field_model        = 050100020   bbbrrrzzz    bbb=10*B(0)  rrr=10*rscale zzz=10*zscale
 ISRF_file            = ISRF/Standard/Standard.dat ISRF_RMax20_ZMax5_DR0.5_DZ0.1_MW_BB_24092007.fits  (new) input ISRF file
@@ -113,7 +118,8 @@ ionization_rate      =0        1=compute ionization rate
 start_timestep       =1.0e9 
   end_timestep       =1.0e2
 timestep_factor      =0.25         
-timestep_repeat      =20   number of repeats per timestep in  timetep_mode=1
+#timestep_repeat      =20   number of repeats per timestep in  timetep_mode=1
+timestep_repeat      =0   number of repeats per timestep in  timetep_mode=1
 timestep_repeat2     =0    number of timesteps in timetep_mode=2
 timestep_print       =10000  number of timesteps between printings
 timestep_diagnostics =10000  number of timesteps between diagnostics
@@ -164,11 +170,11 @@ SNR_nuc_sdg          = 0.00      delta nucleus  source index Gaussian sigma
 SNR_electron_dgpivot = 5.0e3     delta electron source index pivot rigidity (MeV)
 SNR_nuc_dgpivot      = 5.0e3     delta nucleus  source index pivot rigidity (MeV)
 
-proton_norm_Ekin     = 1.08e+5 proton kinetic energy for normalization (MeV)
-proton_norm_flux     = 3.95063e-09    to renorm nuclei/flux of protons at norm energy (cm^-2 sr^-1 s^-1 MeV^-1)
+proton_norm_Ekin     = 1.00e+5 proton kinetic energy for normalization (MeV)
+proton_norm_flux     = 4.8e-09    to renorm nuclei/flux of protons at norm energy (cm^-2 sr^-1 s^-1 MeV^-1)
 
-electron_norm_Ekin   = 2.48e4 3.45e4  electron kinetic energy for normalization (MeV)
-electron_norm_flux   = 1.0743e-09    0.40e-9  flux of electrons at normalization energy (cm^-2 sr^-1 s^-1 MeV^-1)
+electron_norm_Ekin   = 3.45e4 3.45e4  electron kinetic energy for normalization (MeV)
+electron_norm_flux   = 0.49e-09    0.40e-9  flux of electrons at normalization energy (cm^-2 sr^-1 s^-1 MeV^-1)
  
 max_Z                = 2     maximum number of nucleus Z listed
 use_Z_1              = 1
@@ -287,7 +293,7 @@ secondary_antiproton = 0    1,2= calculate: 1=uses nuclear scaling; 2=uses nucle
 tertiary_antiproton  = '''+str(secondary_hadrons)+'''    1=compute tertiary antiprotons
 secondary_protons    = '''+str(secondary_hadrons)+'''    1=compute secondary protons
 
-gamma_rays           = 2 2    1=compute gamma rays, 2=compute HI,H2 skymaps separately
+
 pi0_decay            = 3    1= old formalism 2=Blattnig et al. 3=Kamae et al.
 IC_isotropic         = '''+str(IC_isotropic)+'''    1,2= compute isotropic IC: 1=compute full, 2=store skymap components
 IC_anisotropic       = 0    1,2,3= compute anisotropic IC: 1=full, 2=approx., 3=isotropic
@@ -323,8 +329,7 @@ DM_int7              = 1
 DM_int8              = 1
 DM_int9              = 1
 
-skymap_format        = 1 1 0 3 0 3 0 3 0 3 1 3 1 3 0 3 0     fitsfile format: 0=old format (the default), 1=mapcube for glast science tools, 
-2=both, 3=healpix
+skymap_format        =  '''+str(skymap_format)+''' 1 0 3 0 3 0 3 0 3 1 3 1 3 0 3 0     fitsfile format: 0=old format (the default), 1=mapcube for glast science tools, 2=both, 3=healpix
 output_gcr_full      = 1  output full galactic cosmic ray array
 warm_start           = 0  read in nuclei file and continue run
 
@@ -368,10 +373,18 @@ nHI_model            ='''+str(HIModel)+'''
 nH2_model            ='''+str(H2Model)+'''
 nHII_model           = 3
 
-#COCube_filename      = CO_PEB_galprop_8500.fits.gz
+
+COCube_filename      = '''+H2_filename+'''
 #HICube_filename      = HI_NS_galprop_8500.fits.gz
-COCube_filename      = CO_PEB_galprop.fits.gz
-HICube_filename      = HI_NS_kipac_galprop.fits.gz
+#COCube_filename      = CO_PEB_galprop.fits.gz
+#HICube_filename      = HI_NS_galprop.fits.gz
+HICube_filename      = '''+HI_filename+'''
+
+uniform_emiss        = 0
+renorm_off           = 0
+single_component     = '''+str(single_component) + ''' 
+gamma_rays           = 2 2    1=compute gamma rays, 2=compute HI,H2 skymaps separately
+
 '''
     
     f = open('//data/galprop2/GALDEF/galdef_54_' + filename, 'wb')
@@ -397,12 +410,78 @@ HICube_filename      = HI_NS_kipac_galprop.fits.gz
     # that still needs to be processed.
     print p.stdout.read()
         
-   
+for sf in [3,]:
 
-# GenGaldef('base_no_secondary', dx=3,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
-#             secondary_leptons=0,secondary_hadrons=0)
-GenGaldef('NSPEB_no_secondary', dx=3,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
-            secondary_leptons=0,secondary_hadrons=0,HIModel=2,H2Model=1)
+    GenGaldef('base_2D', n_spatial_dimensions=2, dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+                secondary_leptons=1,secondary_hadrons=1, 
+                skymap_format=sf)
+
+    GenGaldef('base', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+                secondary_leptons=1,secondary_hadrons=1, 
+                skymap_format=sf)
+
+    
+    # GenGaldef('NSPEB_HI_8500_interp0', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #              secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=1,
+    #              skymap_format=sf, HI_filename='HI_NS_galprop_r8500_interp0.fits.gz')
+    
+    # GenGaldef('NSPEB_HI_8500_interp25', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #              secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=1,
+    #              skymap_format=sf, HI_filename='HI_NS_galprop_r8500_interp25.fits.gz')
+
+    # GenGaldef('NSPEB_HI_8500_interp50', dx=2,dz=.5, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #              secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=1,
+    #              skymap_format=sf, HI_filename='HI_NS_galprop_r8500_interp50.fits.gz')
+    # GenGaldef('Pohl_HI_8500', dx=2,dz=.5, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #               secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=1,
+    #               skymap_format=sf, HI_filename='HI_Pohl_galprop_8500.fits')
+
+    # GenGaldef('Pohl_H2_8500', dx=2,dz=.5, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #              secondary_leptons=1,secondary_hadrons=1,HIModel=1,H2Model=2,
+    #              skymap_format=sf, HI_filename='CO_Pohl_galprop_8500.fits')
+
+    # GenGaldef('NSPEB_HI_8500_interp75', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #              secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=1,
+    #              skymap_format=sf, HI_filename='HI_NS_galprop_r8500_interp75.fits.gz')
+
+    # GenGaldef('NSPEB_HI_8500_interp100', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #              secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=1,
+    #              skymap_format=sf, HI_filename='HI_NS_galprop_r8500_interp100.fits.gz')
+
+    # GenGaldef('NSPEB_H2_8500', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #             secondary_leptons=1,secondary_hadrons=1,HIModel=1,H2Model=2,
+    #             skymap_format=sf, H2_filename = 'CO_PEB_galprop_8500.fits.gz')
+
+    GenGaldef('Pohl_HI_8500', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+                secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=1,
+                skymap_format=sf, HI_filename = 'HI_Pohl_galprop_8500_no_corr.fits')
+
+    GenGaldef('Pohl_H2_8500', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+                secondary_leptons=1,secondary_hadrons=1,HIModel=1,H2Model=2,
+                skymap_format=sf, H2_filename = 'CO_Pohl_galprop_8500.fits')
+
+    GenGaldef('Pohl_HI_H2_8500', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+                secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=2,skymap_format=sf, 
+                H2_filename = 'CO_Pohl_galprop_8500.fits',
+                HI_filename = 'HI_Pohl_galprop_8500_no_corr.fits')
+
+
+    # GenGaldef('NSPEB_HI_H2', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #             secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=2,
+    #             skymap_format=sf)
+
+# GenGaldef('base_no_secondary_testing', dx=3,dz=1, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#                  secondary_leptons=0,secondary_hadrons=0, 
+#                  skymap_format=3)
+
+# GenGaldef('NSPEB_no_secondary_HI_testing', dx=3,dz=1, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#              secondary_leptons=0,secondary_hadrons=0,HIModel=2,H2Model=1,
+#              skymap_format=3)
+
+# GenGaldef('NSPEB_no_secondary_H2_testing', dx=3,dz=1, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#              secondary_leptons=0,secondary_hadrons=0,HIModel=1,H2Model=2,
+#              skymap_format=3)
+
 
 #GenGaldef('F07_no_secondary', dx=3,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
 #            secondary_leptons=0,secondary_hadrons=0,HIModel=3,H2Model=1)
@@ -413,14 +492,46 @@ GenGaldef('NSPEB_no_secondary', dx=3,dz=.5, healpix_order=7, IC_isotropic=0,comp
 
 
 
+# Generate single component gas maps
 
+# GenGaldef('base_single_HI', dx=2,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#                  secondary_leptons=0,secondary_hadrons=0, 
+#                  skymap_format=3, single_component=1)
 
+# GenGaldef('base_single_H2', dx=2,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#                  secondary_leptons=0,secondary_hadrons=0, 
+#                  skymap_format=3, single_component=2)
 
+# GenGaldef('NSPEB_single_HI', dx=2,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#                  secondary_leptons=0,secondary_hadrons=0, 
+#                  skymap_format=3, single_component=1, HIModel=2)
 
+# GenGaldef('NSPEB_single_H2', dx=2,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#                  secondary_leptons=0,secondary_hadrons=0, 
+#                  skymap_format=3, single_component=2, HIModel=1, H2Model=2)
 
+# GenGaldef('F07_single_HI', dx=6,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#                  secondary_leptons=0,secondary_hadrons=0, 
+#                  skymap_format=3, single_component=1, HIModel=3, H2Model=1)
 
+# GenGaldef('F07_single_H2', dx=6,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#                  secondary_leptons=0,secondary_hadrons=0, 
+#                  skymap_format=3, single_component=2, HIModel=1, H2Model=3)
 
+# GenGaldef('Pohl_HI_8500_no_corr_test', dx=3,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#               secondary_leptons=0,secondary_hadrons=0,HIModel=2,H2Model=1,
+#               skymap_format=3, HI_filename='HI_Pohl_galprop_8500_no_corr.fits', single_component=1)
+# GenGaldef('Pohl_HI_8500_test', dx=3,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#               secondary_leptons=0,secondary_hadrons=0,HIModel=2,H2Model=1,
+#               skymap_format=3, HI_filename='HI_Pohl_galprop_8500.fits', single_component=1)
 
+# GenGaldef('Pohl_H2_8500_test', dx=5,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#               secondary_leptons=0,secondary_hadrons=0,HIModel=1,H2Model=2,
+#               skymap_format=3, H2_filename='CO_Pohl_galprop_8500.fits', single_component=2)
+
+# GenGaldef('NS_HI_8500_test', dx=3,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#               secondary_leptons=0,secondary_hadrons=0,HIModel=2,H2Model=1,
+#               skymap_format=3, HI_filename='HI_NS_galprop_8500.fits.gz', single_component=1)
 
 
 

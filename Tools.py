@@ -69,6 +69,10 @@ def GetSpec(specType):
     elif specType == 'LogParabola':
         Spec = lambda e, alpha, beta, pivot: (e/pivot)**-(alpha+beta*np.log(e/pivot))
         IntegratedSpec = lambda e1, e2, alpha, beta, pivot: quad(Spec, e1, e2, args=(alpha, beta, pivot))[0]
+    elif specType == 'PLSuperExpCutoff':
+
+        Spec = lambda e, gamma, b, pivot, cutoff: (e/pivot)**-gamma * np.exp((pivot/cutoff)**b-(e/cutoff)**b)
+        IntegratedSpec = lambda e1, e2, gamma, b, pivot, cutoff: quad(Spec, e1, e2, args=(gamma, b, pivot, cutoff))[0]
     else:
         raise Exception("Spectral type not supported.")
 
@@ -154,7 +158,7 @@ def ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=1.):
     FWHM = np.deg2rad(2*theta[halfmax])
     
     # Spherical Harmonic transform
-    return healpy.sphtfunc.smoothing(hpix, fwhm=FWHM*multiplier, verbose=False, iter=2)
+    return healpy.sphtfunc.smoothing(hpix, fwhm=FWHM*multiplier, verbose=False, iter=1)
 
 
 currentExpCube, expcubehdu = None, None  # keeps track of the current gtexpcube2

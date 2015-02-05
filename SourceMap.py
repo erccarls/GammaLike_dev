@@ -74,6 +74,11 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
         cutoff = fgl_data['Cutoff'][idx]
         glat = fgl_data['GLAT'][idx]
         glon = fgl_data['GLON'][idx]
+        # 2FGL doesnt have this keyword
+        try:
+            b = fgl_data['Exp_Index'][idx]
+        except:
+            pass
 
         # Find the Normalization and integrate the spectrum over each energy bin
         if spectype == 'PowerLaw':
@@ -87,6 +92,11 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
             counts = norm*np.array([integratedspec(bin_edges[i_E], bin_edges[i_E+1], specindex, cutoff)
                                     for i_E in range(len(bin_edges)-1)])
             psfWeights = spec(energies, specindex, cutoff)
+        elif spectype == 'PLSuperExpCutoff':
+            norm = fluxdens/spec(pivot, specindex, b, pivot, cutoff)
+            counts = norm*np.array([integratedspec(bin_edges[i_E], bin_edges[i_E+1], specindex, b, pivot, cutoff)
+                                    for i_E in range(len(bin_edges)-1)])
+            psfWeights = spec(energies, specindex, b, pivot, cutoff)
         elif spectype == 'LogParabola':
             norm = fluxdens/spec(pivot, specindex, beta, pivot)
             counts = norm*np.array([integratedspec(bin_edges[i_E], bin_edges[i_E+1], specindex, beta, pivot)
