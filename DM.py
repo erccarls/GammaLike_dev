@@ -13,21 +13,27 @@ import pyfits
 # from scipy.interpolate import RegularGridInterpolator
 import Tools
 import healpy
+import tempfile
+import imp
 
-def __LOS_DM(tnum, n_thread, l_max, b_max, res, r_min, r_max, z_step=0.02):
+def __LOS_DM(tnum, n_thread, l_max, b_max, res, tmp1, tmp2, r_min, r_max, z_step=0.02, ):
     """
     (INTERNAL) LOS Integration Kernel for two passed distributions
     """
     # ==============================================
     # Integration Parameters
     # ==============================================
-    import tmp
-    import tmp2
+    # import tmp1
+    # import tmp2
 
-    time.sleep(.2)
-    reload(tmp)
-    reload(tmp2)
-    func1 = tmp.func
+    # time.sleep(.1)
+    # reload(tmp)
+    # reload(tmp2)
+
+    tmp1 = imp.load_source('tmp1', tmp1)
+    tmp2 = imp.load_source('tmp2', tmp2)
+
+    func1 = tmp1.func
     func2 = tmp2.func
 
     R_solar = 8.5  # Sun at 8.5 kpc
@@ -93,12 +99,16 @@ def LOS_DM(l_max, b_max, res, z_step=0.02, func1='func = lambda x,y,z: 1.', func
     # some issues surrounding multithreading in python.
 
     # Write func to a file so it is importable by child threads
-    f = open('tmp.py', 'wb')
+    #f = open('tmp.py', 'wb')
+    f = tempfile.NamedTemporaryFile(delete=False)
+    tmp1 = f.name
     f.write(func1)
     f.flush()
     f.close()
 
-    f = open('tmp2.py', 'wb')
+    #f = open('tmp2.py', 'wb')
+    f = tempfile.NamedTemporaryFile(delete=False)
+    tmp2 = f.name
     f.write(func2)
     f.flush()
     f.close()
@@ -107,7 +117,7 @@ def LOS_DM(l_max, b_max, res, z_step=0.02, func1='func = lambda x,y,z: 1.', func
 
     kernel = partial(__LOS_DM,
                      n_thread=n_threads, l_max=l_max, b_max=b_max,
-                     res=res, r_min=0, r_max=20, z_step=z_step)
+                     res=res, tmp1=tmp1, tmp2=tmp2, r_min=0, r_max=20, z_step=z_step)
 
     p = mp.Pool(n_threads)
     slices = p.map(kernel, range(n_threads))
@@ -120,7 +130,7 @@ def LOS_DM(l_max, b_max, res, z_step=0.02, func1='func = lambda x,y,z: 1.', func
     return proj_skymap
 
 
-def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation=0., offset=(0, 0), res=.125, size=180.,
+def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation=0., offset=(0, 0), res=.125, size=40.,
            fitsout=None, r_s=20., mult_solid_ang=False):
     """
     Generates a dark matter annihilation or decay skymap combined with instrumental and point source maps.

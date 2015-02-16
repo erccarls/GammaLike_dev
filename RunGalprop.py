@@ -6,6 +6,7 @@ def GenGaldef(
     dx=1., # kpc for dx and dy propagation grid
     dz=.1, # kpc for dz propagation grid
     zmax=6, # halo half-height 
+    xmax=20,
     healpix_order=7,
     IC_isotropic=0,
     computeBremss=0,
@@ -15,25 +16,30 @@ def GenGaldef(
     spiral_fraction=0.,
     skymap_format=3,
     single_component=0,
-    H2_filename = 'CO_PEB_galprop_8500.fits.gz',
-    HI_filename = 'HI_NS_galprop_r8500_interp75.fits.gz'
+    H2_filename = 'CO_Pohl_galprop_8500.fits',
+    HI_filename = 'HI_Pohl_galprop_8500.fits', 
+    H2_filename_rlb='CO_Pohl_8500_rlb.fits',
+    HI_filename_rlb='HI_Pohl_8500_rlb.fits',
+    v_Alfven = 32.7, 
+    COR_filename = "rbands_co10mm_v2_2001_qdeg_9R.fits",
+    HIR_filename = "rbands_hi12_v2_qdeg_zmax1_Ts100000_EBV_mag5_limit_9R.fits",
     ):
     
     galdef_string='''
 Title                = Lorimer distribution, z_h = 4, R_h = 20, T_S = 150, and E(B-V) cut = 5
 n_spatial_dimensions = '''+str(n_spatial_dimensions)+'''
-r_min                =00.0    min r 
+r_min                = 00.0    min r 
 r_max                = 20
 dr                   = '''+str(dx)+'''    delta r
 z_min                = '''+str(-zmax)+'''      min z 
 z_max                = '''+str(zmax)+'''      max z 
 dz                   = '''+str(dz)+'''   delta z
 
-x_min                =-20.0   min x 
-x_max                =+20.0   max x 
+x_min                =-'''+str(xmax)+'''   min x 
+x_max                =+'''+str(xmax)+'''   max x 
 dx                   =  '''+str(dx)+'''   delta x
-y_min                =-20.0   min y 
-y_max                =+20.0   max y 
+y_min                =-'''+str(xmax)+'''   min y 
+y_max                =+'''+str(xmax)+'''   max y 
 dy                   =  '''+str(dx)+'''   delta y
 
 p_min                =1000    min momentum (MV)
@@ -67,11 +73,11 @@ LoS_step             = 0.02   kpc, Line of Sight (LoS) integration step
 LoS_substep_number   = 1      number of substeps per LoS integration step (0,1=no substeps)
 
 D0_xx                = 8.3e+28     diffusion coefficient at reference rigidity
-D_rigid_br           =4.0e3    reference rigidity for diffusion coefficient in MV
+D_rigid_br           = 4.0e3    reference rigidity for diffusion coefficient in MV
 D_g_1                = 0.33    diffusion coefficient index below reference rigidity
 D_g_2                = 0.33    diffusion coefficient index above reference rigidity
 diff_reacc           = 1        0=no reacc.; 1,2=incl.diff.reacc.; -1==beta^3 Dxx; 11=Kolmogorov+damping; 12=Kraichnan+damping
-v_Alfven             = 32.7         Alfven speed in km s-1
+v_Alfven             = '''+str(v_Alfven)+'''         Alfven speed in km s-1
 
 damping_p0           = 1.e6    MV -some rigidity (where CR density is low)
 damping_const_G      = 0.02    a const derived from fitting B/C
@@ -94,14 +100,15 @@ electron_rigid_br    = 2.20561e+06      reference rigidity for electron injectio
 electron_g_2         = 4        electron injection index index above reference rigidity
 
 He_H_ratio           = 0.11     He/H of ISM, by number
-n_X_CO               = 9
+n_X_CO               = 0 9
 X_CO                 = 2.0E20  conversion factor from CO integrated temperature to H2 column density
 X_CO_parameters_0    = 0.597733e20
 X_CO_parameters_1    = -0.100183
 X_CO_parameters_2    = 0.001284e20
 X_CO_parameters_3    = 0.360597
-COR_filename         = rbands_co10mm_v3_2001_qdeg.fits.gz
-HIR_filename         = rbands_hi12_v5_hdeg_zmax1_Ts125.fits.gz
+
+COR_filename         = '''+COR_filename+'''
+HIR_filename         = '''+HIR_filename+'''
 
 B_field_model        = 050100020   bbbrrrzzz    bbb=10*B(0)  rrr=10*rscale zzz=10*zscale
 ISRF_file            = ISRF/Standard/Standard.dat ISRF_RMax20_ZMax5_DR0.5_DZ0.1_MW_BB_24092007.fits  (new) input ISRF file
@@ -118,8 +125,7 @@ ionization_rate      =0        1=compute ionization rate
 start_timestep       =1.0e9 
   end_timestep       =1.0e2
 timestep_factor      =0.25         
-#timestep_repeat      =20   number of repeats per timestep in  timetep_mode=1
-timestep_repeat      =0   number of repeats per timestep in  timetep_mode=1
+timestep_repeat      =20   number of repeats per timestep in  timetep_mode=1
 timestep_repeat2     =0    number of timesteps in timetep_mode=2
 timestep_print       =10000  number of timesteps between printings
 timestep_diagnostics =10000  number of timesteps between diagnostics
@@ -175,7 +181,8 @@ proton_norm_flux     = 4.8e-09    to renorm nuclei/flux of protons at norm energ
 
 electron_norm_Ekin   = 3.45e4 3.45e4  electron kinetic energy for normalization (MeV)
 electron_norm_flux   = 0.49e-09    0.40e-9  flux of electrons at normalization energy (cm^-2 sr^-1 s^-1 MeV^-1)
- 
+
+
 max_Z                = 2     maximum number of nucleus Z listed
 use_Z_1              = 1
 use_Z_2              = 1
@@ -375,13 +382,17 @@ nHII_model           = 3
 
 
 COCube_filename      = '''+H2_filename+'''
+COCube_rlb_filename  = '''+H2_filename_rlb+'''
 #HICube_filename      = HI_NS_galprop_8500.fits.gz
 #COCube_filename      = CO_PEB_galprop.fits.gz
 #HICube_filename      = HI_NS_galprop.fits.gz
 HICube_filename      = '''+HI_filename+'''
+HICube_rlb_filename  = '''+HI_filename_rlb+'''
 
-uniform_emiss        = 0
-renorm_off           = 0
+
+
+uniform_emiss        = 1
+renorm_off           = 1
 single_component     = '''+str(single_component) + ''' 
 gamma_rays           = 2 2    1=compute gamma rays, 2=compute HI,H2 skymaps separately
 
@@ -411,15 +422,14 @@ gamma_rays           = 2 2    1=compute gamma rays, 2=compute HI,H2 skymaps sepa
     print p.stdout.read()
         
 for sf in [3,]:
-
-    GenGaldef('base_2D', n_spatial_dimensions=2, dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
-                secondary_leptons=1,secondary_hadrons=1, 
-                skymap_format=sf)
+    continue
+    # GenGaldef('base_2D', n_spatial_dimensions=2, dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
+    #             secondary_leptons=1,secondary_hadrons=1, 
+    #             skymap_format=sf)
 
     GenGaldef('base', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
                 secondary_leptons=1,secondary_hadrons=1, 
                 skymap_format=sf)
-
     
     # GenGaldef('NSPEB_HI_8500_interp0', dx=1,dz=.25, healpix_order=8, IC_isotropic=2,computeBremss=1,
     #              secondary_leptons=1,secondary_hadrons=1,HIModel=2,H2Model=1,
@@ -506,9 +516,10 @@ for sf in [3,]:
 #                  secondary_leptons=0,secondary_hadrons=0, 
 #                  skymap_format=3, single_component=1, HIModel=2)
 
-# GenGaldef('NSPEB_single_H2', dx=2,dz=.5, healpix_order=7, IC_isotropic=0,computeBremss=0,
+# GenGaldef('NSPEB_single_H2', dx=5,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
 #                  secondary_leptons=0,secondary_hadrons=0, 
-#                  skymap_format=3, single_component=2, HIModel=1, H2Model=2)
+#                  skymap_format=3, single_component=2, HIModel=1, H2Model=2,
+#                  H2_filename='CO_PEB_galprop_8500.fits.gz')
 
 # GenGaldef('F07_single_HI', dx=6,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
 #                  secondary_leptons=0,secondary_hadrons=0, 
@@ -527,11 +538,19 @@ for sf in [3,]:
 
 # GenGaldef('Pohl_H2_8500_test', dx=5,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
 #               secondary_leptons=0,secondary_hadrons=0,HIModel=1,H2Model=2,
-#               skymap_format=3, H2_filename='CO_Pohl_galprop_8500.fits', single_component=2)
+#               skymap_format=3, single_component=2, 
+#               H2_filename='CO_Pohl_galprop_8500.fits', H2_filename_rlb='CO_Pohl_8500_rlb.fits'
+#               )
 
-# GenGaldef('NS_HI_8500_test', dx=3,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
-#               secondary_leptons=0,secondary_hadrons=0,HIModel=2,H2Model=1,
-#               skymap_format=3, HI_filename='HI_NS_galprop_8500.fits.gz', single_component=1)
+GenGaldef('Pohl_HI_8500_test', dx=5,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
+              secondary_leptons=0,secondary_hadrons=0,HIModel=2,H2Model=1,
+              skymap_format=3, single_component=1, 
+              HI_filename='HI_Pohl_galprop_8500.fits', HI_filename_rlb='HI_Pohl_8500_rlb.fits'
+              )
+
+# GenGaldef('test_2', dx=3,dz=2, healpix_order=7, IC_isotropic=0,computeBremss=0,
+#               secondary_leptons=0,secondary_hadrons=0,HIModel=1,H2Model=1,
+#               skymap_format=3)
 
 
 

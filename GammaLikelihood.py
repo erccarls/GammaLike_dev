@@ -454,8 +454,9 @@ class like():
     #---------------------------------------------------------------------------
     # Now load the source
     foo = imp.load_source('tmplike', f.name)
-    print 'Write likelihood tempfile to ', f.name
+
     if print_level > 0:
+        print 'Write likelihood tempfile to ', f.name
         print "Code generation completed in", "{:10.4e}".format(time.time()-start), 's'
         try:
             import cudamat

@@ -17,6 +17,7 @@ from scipy.integrate import quad
 import multiprocessing as mp
 import sys
 import cPickle as pickle
+import h5py
 
 class Analysis():
     #--------------------------------------------------------------------
@@ -582,6 +583,113 @@ class Analysis():
                                value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
 
 
+    def AddHDF5Template(self, hdf5file, verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3,
+               fixSpectrum=False, noPSF=False, separate_ics=True):
+        """
+        This method takes a base analysis prefix, along with an X_CO profile and generates the combined diffuse template,
+        or components of the diffuse template.
+
+        :param basedir: Base directory to read from
+        :param tag: Tag for the galprop file.  This is the part between '_54_' and '.gz'.
+        :param verbosity: 0 is quiet, >1 prints status.
+        :param multiplier: Blur each map using Gaussian kernel with sigma=FWHM_PSF*multiplier/2
+        :param bremsfrac: If None, brems is treated as independent.  Otherwise Brem normalization
+            is linked to Pi0 normalization, scaled by a factor bremsfrac.
+        :param E_subsample: Number of energy sub bins to use when integrating over each energy band.
+        :param fixSpectrum: Allow the spectrum to float in each energy bin.
+        :param noPSF: Do not apply PSF if True.  Can enhance speed.
+        :param separate_ics: If true, the CMB template and optical+far-infrared are treated as two templates.
+            (normalization of OPT and FIR are linked)
+        """
+
+        #---------------------------------------------------------------------------------
+        # Load templates
+
+        if verbosity>0:
+            print 'Loading HDF5 file'
+
+        h5 = h5py.File(hdf5file, 'r')
+        energies = h5['/templates/energies'][()]
+
+        # For some reason, older versions of galprop files have slightly different data structures.  This try/except
+        # will detect the right one to use.
+        comps, comps_new = {}, {}
+
+        if separate_ics:
+            comps['ics_cmb'] = h5['/templates/ics_cmb'][()]
+            comps['ics_optfir'] = h5['/templates/ics_opt'][()]+h5['/templates/ics_fir'][()]
+            comps_new['ics_cmb'] = np.zeros((self.n_bins, 12*self.nside**2))
+            comps_new['ics_optfir'] = np.zeros((self.n_bins, 12*self.nside**2))
+        else:
+            comps['ics'] = h5['/templates/ics_cmb'][()] + h5['/templates/ics_opt'][()]+h5['/templates/ics_fir'][()]
+            comps_new['ics'] = np.zeros((self.n_bins, 12*self.nside**2))
+
+        comps['pi0'] = h5['/templates/pi0'][()]
+        comps['brem'] = h5['/templates/brem'][()]
+        comps_new['pi0'] = np.zeros((self.n_bins, 12*self.nside**2))
+        comps_new['brem'] = np.zeros((self.n_bins, 12*self.nside**2))
+
+        #---------------------------------------------------------------------------------
+        # Now we integrate each model over the energy bins...
+        #
+        # Multiprocessing for speed. There is an async callback which applies each result to
+        # the arrays.  Not sure why RunAsync needs new thread pool for each component, but this
+        # works and decreases memory footprint.
+        def callback(result):
+            idx, comp, dat = result
+            comps_new[comp][idx] = dat
+
+        def RunAsync(component):
+            #p = mp.Pool(mp.cpu_count())
+            for i_E in range(self.n_bins):
+                # p.apply_async(Tools.AsyncInterpolateHealpix,
+                #               [comps[component], energies, self.bin_edges[i_E], self.bin_edges[i_E+1],
+                #                i_E, component, E_subsample, self.nside],
+                #               callback=callback)
+
+                comps_new[component][i_E] = Tools.InterpolateHealpix(comps[component], energies,  self.bin_edges[i_E],
+                                                                     self.bin_edges[i_E+1], E_bins=E_subsample,
+                                                                     nside_out=self.nside)
+            # p.close()
+            # p.join()
+
+        # For each component, run the async sampling/sizing.
+        for key in comps:
+            if verbosity>0:
+                print 'Integrating and Resampling', key, 'templates...'
+                sys.stdout.flush()
+            RunAsync(key)
+
+
+        #---------------------------------------------------------------------------------
+        # Now we just need to add the templates to the active template stack
+
+        # Delete previous keys for diffuse model
+        for key in ['Brems', 'Pi0', 'ICS', 'ICS_CMB', 'ICS_OPTFIR', 'FermiDiffuse', 'Pi0_Brems']:
+            self.templateList.pop(key, None)
+
+        if separate_ics:
+            self.AddTemplate(name='ICS_CMB', healpixCube=comps_new['ics_cmb'], fixSpectrum=fixSpectrum, fixNorm=False,
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
+
+            self.AddTemplate(name='ICS_OPT_FIR', healpixCube=comps_new['ics_optfir'], fixSpectrum=fixSpectrum, fixNorm=False,
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
+        else:
+            self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=fixSpectrum, fixNorm=False,
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
+
+        if bremsfrac is None:
+            self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=fixSpectrum, fixNorm=False,
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
+            self.AddTemplate(name='Pi0', healpixCube=comps_new['pi0'], fixSpectrum=fixSpectrum, fixNorm=False,
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
+
+        else:
+            self.AddTemplate(name='Pi0_Brems', healpixCube=comps_new['pi0']+bremsfrac*comps_new['brem'],
+                               fixSpectrum=fixSpectrum, fixNorm=False,
+                               value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
+
+
     def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e2,
                       precision=None, error=0.1, minos=True):
         """
@@ -680,7 +788,7 @@ class Analysis():
                         t = self.templateList[name]
                         t.value[i_E] = err['min']
                         t.valueError.append(np.array((err['lower'], err['upper'])))
-            print t.valueError
+
             #t.valueError = np.array(t.valueError)
             # END UPDATE TEMPLATE SECTION
             # -------------------------------------------------------------
@@ -704,7 +812,7 @@ class Analysis():
         residual = copy.copy(self.binned_data)
         for key, t in self.templateList.items():
             # Make sure this template has been fit already
-            if t.fixSpectrum:
+            if t.fixSpectrum or t.fixNorm:
                 residual -= t.value*t.healpixCube
             else:
                 for i_E in range(self.n_bins):
@@ -814,7 +922,7 @@ class Analysis():
 
 
     def AddFermiBubbleTemplate(self, template_file='./bubble_templates_diskcut30.0.fits',
-                               spec_file='./reduced_bubble_spec_apj_793_64.dat', fixSpectrum=True):
+                               spec_file='./reduced_bubble_spec_apj_793_64.dat', fixSpectrum=True, fixNorm=False):
         """
         Adds a fermi bubble template to the template stack.
 
@@ -863,7 +971,7 @@ class Analysis():
 
         # Now each bin is in ph cm^-2 s^-1.  Apply IRF takes care of the rest.
         self.AddTemplate(healpixCube=healpixcube, name='Bubbles', fixSpectrum=fixSpectrum,
-                         fixNorm=False, limits=[None, None], value=1., ApplyIRF=True,
+                         fixNorm=fixNorm, limits=[None, None], value=1., ApplyIRF=True,
                          sourceClass='GEN', valueUnc=valueUnc)
 
     def GenExposureMap(self):

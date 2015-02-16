@@ -6,9 +6,18 @@
   <component name="ChangeListManager">
     <list default="true" id="106cb39c-4895-4b73-a64c-c5a1bad85918" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Analysis.py" afterPath="$PROJECT_DIR$/Analysis.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DM.py" afterPath="$PROJECT_DIR$/DM.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Fit X_CO and ICS.ipynb" afterPath="$PROJECT_DIR$/Fit X_CO and ICS.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GCE - Compare Gas Models.ipynb" afterPath="$PROJECT_DIR$/GCE - Compare Gas Models.ipynb" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GammaLikelihood.py" afterPath="$PROJECT_DIR$/GammaLikelihood.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Test Analysis.ipynb" afterPath="$PROJECT_DIR$/Test Analysis.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Healpix Compare .ipynb" afterPath="$PROJECT_DIR$/Healpix Compare .ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/Junk-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/Junk-checkpoint.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Junk.ipynb" afterPath="$PROJECT_DIR$/Junk.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Pohl H2.ipynb" afterPath="$PROJECT_DIR$/Pohl H2.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Pohl HI.ipynb" afterPath="$PROJECT_DIR$/Pohl HI.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Reduce Num Rings.ipynb" afterPath="$PROJECT_DIR$/Reduce Num Rings.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/RunGalprop.py" afterPath="$PROJECT_DIR$/RunGalprop.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/convert_gas_cube_galprop.ipynb" afterPath="$PROJECT_DIR$/convert_gas_cube_galprop.ipynb" />
     </list>
     <ignored path="GCE_sys.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -41,8 +50,8 @@
       <file leaf-file-name="Tools.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Tools.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="3342" max-vertical-offset="8514">
-              <caret line="207" column="70" selection-start-line="207" selection-start-column="70" selection-end-line="207" selection-end-column="70" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="3414" max-vertical-offset="8586">
+              <caret line="211" column="70" selection-start-line="211" selection-start-column="70" selection-end-line="211" selection-end-column="70" />
               <folding>
                 <element signature="e#365#383#0" expanded="true" />
               </folding>
@@ -53,9 +62,11 @@
       <file leaf-file-name="SourceMap.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SourceMap.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1152" max-vertical-offset="2970">
-              <caret line="120" column="44" selection-start-line="120" selection-start-column="44" selection-end-line="120" selection-end-column="44" />
-              <folding />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1332" max-vertical-offset="3150">
+              <caret line="130" column="44" selection-start-line="130" selection-start-column="44" selection-end-line="130" selection-end-column="44" />
+              <folding>
+                <marker date="1422390749000" expanded="true" signature="478:8926" placeholder="..." />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -73,8 +84,8 @@
       <file leaf-file-name="GammaLikelihood.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.3040331" vertical-offset="3558" max-vertical-offset="9450">
-              <caret line="219" column="70" selection-start-line="219" selection-start-column="70" selection-end-line="219" selection-end-column="70" />
+            <state vertical-scroll-proportion="0.7274549" vertical-offset="2928" max-vertical-offset="13680">
+              <caret line="209" column="40" selection-start-line="209" selection-start-column="40" selection-end-line="209" selection-end-column="40" />
               <folding />
             </state>
           </provider>
@@ -83,10 +94,14 @@
       <file leaf-file-name="Analysis.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Analysis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-94.0" vertical-offset="1568" max-vertical-offset="15048">
-              <caret line="249" column="61" selection-start-line="249" selection-start-column="61" selection-end-line="249" selection-end-column="61" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1604" max-vertical-offset="19080">
+              <caret line="251" column="61" selection-start-line="251" selection-start-column="61" selection-end-line="251" selection-end-column="61" />
               <folding>
                 <element signature="e#289#307#0" expanded="true" />
+                <marker date="1423602279000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
+                <marker date="1423602279000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+                <marker date="1423602279000" expanded="true" signature="43457:44094" placeholder="&quot;&quot;&quot;Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin....&quot;&quot;&quot;" />
+                <marker date="1423602279000" expanded="true" signature="53416:53559" placeholder="&quot;&quot;&quot;Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042)....&quot;&quot;&quot;" />
               </folding>
             </state>
           </provider>
@@ -95,9 +110,11 @@
       <file leaf-file-name="DM.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/DM.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="12.193548" vertical-offset="4896" max-vertical-offset="5886">
-              <caret line="256" column="0" selection-start-line="256" selection-start-column="0" selection-end-line="256" selection-end-column="0" />
-              <folding />
+            <state vertical-scroll-proportion="0.0" vertical-offset="5076" max-vertical-offset="6066">
+              <caret line="266" column="0" selection-start-line="266" selection-start-column="0" selection-end-line="266" selection-end-column="0" />
+              <folding>
+                <marker date="1423467148000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -105,7 +122,7 @@
       <file leaf-file-name="Template.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Template.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-8.709678" vertical-offset="0" max-vertical-offset="828">
+            <state vertical-scroll-proportion="0.0" vertical-offset="270" max-vertical-offset="828">
               <caret line="15" column="88" selection-start-line="15" selection-start-column="88" selection-end-line="15" selection-end-column="88" />
               <folding />
             </state>
@@ -175,6 +192,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -195,7 +213,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -337,9 +354,6 @@
       <option name="docutils_open_in_browser" value="false" />
       <method />
     </configuration>
-    <configuration default="true" type="JavascriptDebugType" factoryName="JavaScript Debug">
-      <method />
-    </configuration>
     <configuration default="true" type="tests" factoryName="Unittests">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -361,6 +375,9 @@
       <option name="PUREUNITTEST" value="true" />
       <option name="PARAMS" value="" />
       <option name="USE_PARAM" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="JavascriptDebugType" factoryName="JavaScript Debug">
       <method />
     </configuration>
     <configuration default="true" type="PyBehaveRunConfigurationType" factoryName="Behave">
@@ -405,6 +422,20 @@
       <envs />
       <method />
     </configuration>
+    <configuration default="true" type="PyLettuceRunConfigurationType" factoryName="Lettuce">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="GCE_sys" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="ADDITIONAL_ARGS" value="" />
+      <method />
+    </configuration>
     <configuration default="true" type="tests" factoryName="Attests">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -423,20 +454,6 @@
       <option name="TEST_TYPE" value="TEST_SCRIPT" />
       <option name="PATTERN" value="" />
       <option name="USE_PATTERN" value="false" />
-      <method />
-    </configuration>
-    <configuration default="true" type="PyLettuceRunConfigurationType" factoryName="Lettuce">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="GCE_sys" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="ADDITIONAL_ARGS" value="" />
       <method />
     </configuration>
     <configuration default="false" name="GCE_sys_docs" type="docs" factoryName="Sphinx task">
@@ -537,7 +554,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="52" width="1920" height="1124" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -545,21 +562,21 @@
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17716116" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17929563" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32921028" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3996194" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32921028" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3996194" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
     </layout>
     <layout-to-restore>
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -580,9 +597,9 @@
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17760417" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32921028" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3996194" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3996194" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32921028" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
     </layout-to-restore>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -610,6 +627,74 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/Tools.py">
       <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3342" max-vertical-offset="8514">
+          <caret line="207" column="70" selection-start-line="207" selection-start-column="70" selection-end-line="207" selection-end-column="70" />
+          <folding>
+            <element signature="e#365#383#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SourceMap.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1152" max-vertical-offset="2970">
+          <caret line="120" column="44" selection-start-line="120" selection-start-column="44" selection-end-line="120" selection-end-column="44" />
+          <folding>
+            <marker date="1422390749000" expanded="true" signature="478:8926" placeholder="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/GenFermiData.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="954" max-vertical-offset="1980">
+          <caret line="54" column="20" selection-start-line="54" selection-start-column="20" selection-end-line="54" selection-end-column="20" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="9450">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Analysis.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1568" max-vertical-offset="15048">
+          <caret line="249" column="61" selection-start-line="249" selection-start-column="61" selection-end-line="249" selection-end-column="61" />
+          <folding>
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1423602279000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="43457:44094" placeholder="&quot;&quot;&quot;Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="53416:53559" placeholder="&quot;&quot;&quot;Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042)....&quot;&quot;&quot;" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DM.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="4896" max-vertical-offset="5886">
+          <caret line="256" column="0" selection-start-line="256" selection-start-column="0" selection-end-line="256" selection-end-column="0" />
+          <folding>
+            <marker date="1423467148000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Template.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="270" max-vertical-offset="828">
+          <caret line="15" column="88" selection-start-line="15" selection-start-column="88" selection-end-line="15" selection-end-column="88" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Tools.py">
+      <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="3234" max-vertical-offset="8514">
           <caret line="208" column="37" selection-start-line="208" selection-start-column="37" selection-end-line="208" selection-end-column="37" />
           <folding>
@@ -622,7 +707,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="1152" max-vertical-offset="2970">
           <caret line="120" column="44" selection-start-line="120" selection-start-column="44" selection-end-line="120" selection-end-column="44" />
-          <folding />
+          <folding>
+            <marker date="1422390749000" expanded="true" signature="478:8926" placeholder="..." />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -648,6 +735,10 @@
           <caret line="375" column="69" selection-start-line="375" selection-start-column="69" selection-end-line="375" selection-end-column="69" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
+            <marker date="1423602279000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="43457:44094" placeholder="&quot;&quot;&quot;Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="53416:53559" placeholder="&quot;&quot;&quot;Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042)....&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -656,7 +747,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="5886">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1423467148000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -682,7 +775,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2952">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1422390749000" expanded="true" signature="478:8926" placeholder="..." />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -708,6 +803,10 @@
           <caret line="295" column="20" selection-start-line="295" selection-start-column="20" selection-end-line="295" selection-end-column="20" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
+            <marker date="1423602279000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="43457:44094" placeholder="&quot;&quot;&quot;Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="53416:53559" placeholder="&quot;&quot;&quot;Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042)....&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -744,6 +843,10 @@
           <caret line="724" column="0" selection-start-line="724" selection-start-column="0" selection-end-line="724" selection-end-column="0" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
+            <marker date="1423602279000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="43457:44094" placeholder="&quot;&quot;&quot;Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="53416:53559" placeholder="&quot;&quot;&quot;Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042)....&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -780,6 +883,10 @@
           <caret line="614" column="0" selection-start-line="614" selection-start-column="0" selection-end-line="614" selection-end-column="0" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
+            <marker date="1423602279000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="43457:44094" placeholder="&quot;&quot;&quot;Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="53416:53559" placeholder="&quot;&quot;&quot;Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042)....&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -813,6 +920,10 @@
           <caret line="115" column="47" selection-start-line="115" selection-start-column="47" selection-end-line="115" selection-end-column="47" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
+            <marker date="1423602279000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="43457:44094" placeholder="&quot;&quot;&quot;Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="53416:53559" placeholder="&quot;&quot;&quot;Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042)....&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -869,14 +980,14 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/GenSourceMap.ipynb">
-      <provider selected="true" editor-type-id="ipnb-editor">
-        <state>
-          <selected id="0" top="5" />
-        </state>
-      </provider>
       <provider editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="28188">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+      <provider selected="true" editor-type-id="ipnb-editor">
+        <state>
+          <selected id="0" top="5" />
         </state>
       </provider>
     </entry>
@@ -889,18 +1000,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/DM.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="12.193548" vertical-offset="4896" max-vertical-offset="5886">
-          <caret line="256" column="0" selection-start-line="256" selection-start-column="0" selection-end-line="256" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Tools.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="3342" max-vertical-offset="8514">
-          <caret line="207" column="70" selection-start-line="207" selection-start-column="70" selection-end-line="207" selection-end-column="70" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="5076" max-vertical-offset="6066">
+          <caret line="266" column="0" selection-start-line="266" selection-start-column="0" selection-end-line="266" selection-end-column="0" />
           <folding>
-            <element signature="e#365#383#0" expanded="true" />
+            <marker date="1423467148000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -915,15 +1018,17 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SourceMap.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1152" max-vertical-offset="2970">
-          <caret line="120" column="44" selection-start-line="120" selection-start-column="44" selection-end-line="120" selection-end-column="44" />
-          <folding />
+        <state vertical-scroll-proportion="0.0" vertical-offset="1332" max-vertical-offset="3150">
+          <caret line="130" column="44" selection-start-line="130" selection-start-column="44" selection-end-line="130" selection-end-column="44" />
+          <folding>
+            <marker date="1422390749000" expanded="true" signature="478:8926" placeholder="..." />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Template.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-8.709678" vertical-offset="0" max-vertical-offset="828">
+        <state vertical-scroll-proportion="0.0" vertical-offset="270" max-vertical-offset="828">
           <caret line="15" column="88" selection-start-line="15" selection-start-column="88" selection-end-line="15" selection-end-column="88" />
           <folding />
         </state>
@@ -931,18 +1036,32 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Analysis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-94.0" vertical-offset="1568" max-vertical-offset="15048">
-          <caret line="249" column="61" selection-start-line="249" selection-start-column="61" selection-end-line="249" selection-end-column="61" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="1604" max-vertical-offset="19080">
+          <caret line="251" column="61" selection-start-line="251" selection-start-column="61" selection-end-line="251" selection-end-column="61" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
+            <marker date="1423602279000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="43457:44094" placeholder="&quot;&quot;&quot;Given a template name, calculates the spectrum averaged over the unmasked area in each energy bin....&quot;&quot;&quot;" />
+            <marker date="1423602279000" expanded="true" signature="53416:53559" placeholder="&quot;&quot;&quot;Calculates pixel weights for the likelihood analysis based on Eqn. 2.6 of Calore et al (1409.0042)....&quot;&quot;&quot;" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Tools.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3414" max-vertical-offset="8586">
+          <caret line="211" column="70" selection-start-line="211" selection-start-column="70" selection-end-line="211" selection-end-column="70" />
+          <folding>
+            <element signature="e#365#383#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.3040331" vertical-offset="3558" max-vertical-offset="9450">
-          <caret line="219" column="70" selection-start-line="219" selection-start-column="70" selection-end-line="219" selection-end-column="70" />
+        <state vertical-scroll-proportion="0.7274549" vertical-offset="2928" max-vertical-offset="13680">
+          <caret line="209" column="40" selection-start-line="209" selection-start-column="40" selection-end-line="209" selection-end-column="40" />
           <folding />
         </state>
       </provider>
