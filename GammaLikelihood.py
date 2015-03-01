@@ -332,10 +332,13 @@ def RunLikelihoodBinByBin(bin, analysis, print_level=0, use_basinhopping=False, 
         tmpcube = np.zeros(shape=(t.healpixCube.shape[0], len(mask_idx)))
 
         for Ebin in range(t.healpixCube.shape[0]):
-            tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx]
-        templateList[key].healpixCubeMasked = tmpcube
+            if t.sourceClass == 'FGL':
+                tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx].toarray()[0]
+            else:
+                tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx]
 
-        templateList[key].healpixCube = None  # Open memory by deleting the copy's full size templates
+        templateList[key].healpixCubeMasked = tmpcube
+        templateList[key].healpixCube = None  # Free memory by deleting the copy's full size templates
 
     # mask the data as well.
     masked_data = analysis.binned_data[:, mask_idx].astype(np.float32)
@@ -449,8 +452,26 @@ class like():
         #self.ncall+=1
         return neg_loglikelihood + chi2_ext/2.
 
+    def f2(self,x0):
+        """+args+""" = x0
+        model = np.zeros(shape=self.data.shape)
+""" + model + """
+""" + extConstraint + """
+
+        # gpu mode
+        if self.use_cuda:
+            cmModel = self.cm.CUDAMatrix(model)
+            cmModel_orig = cmModel.copy()
+            neg_loglikelihood = cmModel_orig.subtract(self.cm.log(cmModel).mult(self.cmData)).mult(self.cm_psc_weights).sum(axis=0).sum(axis=1).asarray()[0,0]
+
+        # cpu mode
+        else:
+            neg_loglikelihood = np.sum(self.psc_weights*(-self.flat_data*np.log(model)+model))
+
+        return neg_loglikelihood + chi2_ext/2.
         """)
     f.close()
+
     #---------------------------------------------------------------------------
     # Now load the source
     foo = imp.load_source('tmplike', f.name)

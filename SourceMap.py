@@ -12,7 +12,8 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
                  res=0.125,
                  nside=256,
                  onlyidx=None,
-                 filename=None):
+                 filename=None,
+                 verbosity=1):
     """
     This method generates a source map based on an input catalog implementing the following procedure:
     1. Integrate given spectrum to 2FGL over each energy bin to obtain counts/cm^2/s
@@ -161,7 +162,7 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
                 np.add.at(pscmap[i_E], hpix_idx, cartMap[i_lat])
             # print cartMap.sum()
 
-        if (i_idx % 1) == 0:
+        if (i_idx % 1) == 0 and verbosity > 0:
             print '\rGenerating Point Source Map:', '%2.2f' % (np.float(i_idx)/len(idx_all)*100.), '%',
             sys.stdout.flush()
     if filename is not None:

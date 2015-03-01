@@ -113,7 +113,7 @@ def LOS_DM(l_max, b_max, res, z_step=0.02, func1='func = lambda x,y,z: 1.', func
     f.flush()
     f.close()
     time.sleep(0.05)
-    n_threads = mp.cpu_count()
+    n_threads = 1 # mp.cpu_count()
 
     kernel = partial(__LOS_DM,
                      n_thread=n_threads, l_max=l_max, b_max=b_max,
@@ -130,7 +130,7 @@ def LOS_DM(l_max, b_max, res, z_step=0.02, func1='func = lambda x,y,z: 1.', func
     return proj_skymap
 
 
-def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation=0., offset=(0, 0), res=.125, size=40.,
+def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation=0., offset=(0, 0), res=.125, size=60.,
            fitsout=None, r_s=20., mult_solid_ang=False):
     """
     Generates a dark matter annihilation or decay skymap combined with instrumental and point source maps.
@@ -215,19 +215,22 @@ func = lambda x,y,z: 1.
     else:
         raise Exception("DM Halo type not supported")
 
+    axesratio = 1./axesratio
+
     #-------------------------------------------------------
     # Integrate the DM profile along l.o.s. in 1 pc steps
     if decay:
-        dm_prof = dm_norm * LOS_DM(0, 1.5 * axesratio * size, res=res, z_step=0.001, func1=func,
+        dm_prof = dm_norm * LOS_DM(0, 1.5 * axesratio * size, res=res, z_step=0.002, func1=func,
                                    func2='func=lambda x,y,z:1.')[:, 0]
     else:
-        dm_prof = dm_norm ** 2 * LOS_DM(0, 1.5 * axesratio * size, res=res, z_step=0.001, func1=func,
+        dm_prof = dm_norm ** 2 * LOS_DM(0, 1.5 * axesratio * size, res=res, z_step=0.002, func1=func,
                                         func2=func)[:, 0]
-
+    
+    
     # dm_prof is a list of LOS integrated DM profile as a function of angular displacement from GC.
     # Build the interpolator..
     dm_interp = lambda r: np.interp(r, np.linspace(-1.5 * axesratio * size, 1.5 * axesratio * size,
-                                                   3. * axesratio * size / res + 1), dm_prof, left=0, right=0)
+                                                   len(dm_prof)), dm_prof, left=0, right=0)
     # Currently unsupported for hpix maps
     rotation = np.deg2rad(-rotation)
 

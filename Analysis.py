@@ -18,6 +18,7 @@ import multiprocessing as mp
 import sys
 import cPickle as pickle
 import h5py
+from scipy.sparse import csr_matrix
 
 class Analysis():
     #--------------------------------------------------------------------
@@ -28,7 +29,7 @@ class Analysis():
                     tag='P7REP_CLEAN_V15_calore', basepath='/data/GCE_sys/',
                     phfile_raw='/data/fermi_data_1-8-14/phfile.txt',
                     scfile='/data/fermi_data_1-8-14/lat_spacecraft_merged.fits',
-                    evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v08.fit',
+                    evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v14.fit',
                     gtfilter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52"):
         """
         :param    E_min:        Min energy for recursive spectral binning
@@ -155,40 +156,88 @@ class Analysis():
 
         mask = np.zeros(shape=12*self.nside**2)
         # Find lat/lon of each healpix pixel
-        l_pix, b_pix = Tools.hpix2ang(hpix=np.arange(12*self.nside**2),nside=self.nside)
+        l_pix, b_pix = Tools.hpix2ang(hpix=np.arange(12*self.nside**2), nside=self.nside)
         # Find elements that are masked
-        idx = np.where(((l_pix < l_max) | (l_pix > (l_min+360)))
+        l_pix[l_pix>180.] = l_pix[l_pix>180.]-360.
+
+        idx = np.where(((l_pix < l_max) & (l_pix > l_min))
                        & (b_pix < b_max) & (b_pix > b_min)
                        & (np.abs(b_pix) > plane_mask))[0]
         mask[idx] = 1.  # Set unmasked elements to 1
         
         if merge is True:
-            masked_idx = np.where(mask == 0)[0]
-            self.mask[masked_idx] = 0
+            #masked_idx = np.where(mask == 0)[0]
+            self.mask = (self.mask.astype(np.int32) | mask.astype(np.int32))
+
+            #self.mask[masked_idx] = 0
         else: 
             self.mask = mask
         return mask
 
-    def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
-                                    fixSpectrum=False, fixNorm=False, limits=[None, None], value=1,):
-        """
-        Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted
-        to a healpix template.
+    # def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
+    #                                 fixSpectrum=False, fixNorm=False, limits=[None, None], value=1,):
+    #     """
+    #     Adds a point source map to the list of templates.  Cartesian input from gtsrcmaps is then converted
+    #     to a healpix template.
+    #
+    #     :param    pscmap: The point source map should be the output from gtsrcmaps in cartesian coordinates.
+    #     :param    name:   Name to use for this template.
+    #     :param    fixSpectrum: If True, the relative normalizations of each energy bin will be held fixed for this
+    #                 template, but the overall normalization is free
+    #     :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
+    #     :param    limits:      Specify range of template normalizations.
+    #     :param    value:       Initial value for the template normalization.
+    #     """
+    #     # Convert the input map into healpix.
+    #     hpix = Tools.CartesianCountMap2Healpix(cartCube=pscmap, nside=self.nside)[:-1]/1e9
+    #     for i in range(len(hpix)):
+    #         hpix[i] /= (float(self.bin_edges[i])/self.bin_edges[0])
+    #
+    #     self.AddTemplate(name, hpix, fixSpectrum, fixNorm, limits, value, ApplyIRF=False, sourceClass='PSC')
 
-        :param    pscmap: The point source map should be the output from gtsrcmaps in cartesian coordinates.
-        :param    name:   Name to use for this template.
-        :param    fixSpectrum: If True, the relative normalizations of each energy bin will be held fixed for this
-                    template, but the overall normalization is free
-        :param    fixNorm:     Fix the overall normalization of this template.  This implies fixSpectrum=True.
-        :param    limits:      Specify range of template normalizations.
-        :param    value:       Initial value for the template normalization.
-        """
-        # Convert the input map into healpix.
-        hpix = Tools.CartesianCountMap2Healpix(cartCube=pscmap, nside=self.nside)[:-1]/1e9
-        for i in range(len(hpix)):
-            hpix[i] /= (float(self.bin_edges[i])/self.bin_edges[0])
 
-        self.AddTemplate(name, hpix, fixSpectrum, fixNorm, limits, value, ApplyIRF=False, sourceClass='PSC')
+    def AddFGLSource(self, idx, fix=False):
+        '''
+        Add a single point source to the fit at index idx of the active PSC catalog (defined at Analysis.fglpath).
+        :param idx: index of the point source to add.
+        :param fix: Fix the normalization and spectrum of this source if True.
+        :return:
+        '''
+        # Generate point source template and convert to sparse matrix for lower memory profile
+        try:
+            t_sparse = csr_matrix(self.GenPointSourceTemplate(onlyidx=[idx, ], save=False, verbosity=0), dtype=np.float32)
+            name = pyfits.open(self.fglpath)[1].data['Source_Name'][idx]
+            name = name.replace('+','p').replace(' ', '_').replace('-', 'n').replace('.', 'd')
+            # Already convolved with IRF, so just add template to stack.
+            self.AddTemplate(name, t_sparse, fixSpectrum=fix, fixNorm=fix,
+                             limits=[None, None], value=1., ApplyIRF=False, sourceClass='FGL')
+        except:
+            raise Exception("Index Error: Point Source index out of range for active catalog.")
+
+
+    def PopulateROI(self, center, radius, fix_radius=5.):
+        """
+        Fills a rectangular region of interest with all FGL point sources.
+        :param center: (lon,lat) of the ROI center
+        :param width: ROI is a square box with this half-width in degrees
+        :param fix_radius: Sources farther than this from the center of the ROI have fixed normalization.
+        :return: None
+        """
+
+        fgl = pyfits.open(self.fglpath)[1].data
+        l, b = fgl['GLON'], fgl['GLAT']
+        
+        fgl_idx = np.nonzero((np.abs(b-GLAT)<roi_radius) & (np.abs(l-GLON)<roi_radius))[0]
+
+
+    def RemoveAllPointSources(self):
+        """
+        Removes all FGL sources from the template stack.  Useful if changing ROI, but still want to keep diffuse templates.
+        :return: None
+        """
+        for t in self.templateList.keys():
+            if t.sourceClass = 'FGL':
+                self.DeleteTemplate(t)
 
 
     def AddPointSourceTemplate(self, pscmap=None, name='PSC', fixNorm=False,
@@ -214,16 +263,17 @@ class Analysis():
                          ApplyIRF=False, sourceClass='PSC', multiplier=multiplier)
 
 
-    def GenPointSourceTemplate(self, pscmap=None, onlyidx=None):
+    def GenPointSourceTemplate(self, pscmap=None, onlyidx=None, save=True, verbosity=1):
         """
         Generates a point source count map valid for the current analysis based on 2fgl catalog.  This can take a long
         time so it is usually done once and then saved.
 
         :param pscmap: Specify the point source map filename.  If None, then the default path
             self.basemap+'PSC_'+self.tag+'.npy' is used.
+        :param onlyidx: Generate template for only a single point source in the fglpath catalog at this index.
         :return PSCMap:  The healpix 'cube' for the point sources.
         """
-        if pscmap is None:
+        if (pscmap is None) and (save is True):
             pscmap = self.basepath + '/PSC_' + self.tag + '.npy'
 
         total_map = SourceMap.GenSourceMap(self.bin_edges, l_range=(-180, 180), b_range=(-90, 90),
@@ -233,7 +283,7 @@ class Analysis():
                                            maxpsf = 7.5,
                                            res=0.125,
                                            nside=self.nside,
-                                           filename=pscmap, onlyidx=onlyidx)
+                                           filename=pscmap, onlyidx=onlyidx, verbosity=verbosity)
 
         return total_map
 
@@ -739,8 +789,19 @@ class Analysis():
 
         # Otherwise, Run the bin-by-bin fit.
         else:
-            results = [GammaLikelihood.RunLikelihoodBinByBin(bin=i, analysis=self, print_level=print_level, precision=precision, tol=tol)
+            results = [GammaLikelihood.RunLikelihoodBinByBin(bin=i, analysis=self, print_level=print_level,
+                                                             error=error, precision=precision, tol=tol)
                        for i in range(self.n_bins)]
+
+
+            for i_E in range(self.n_bins):
+                if results[i_E].get_fmin().is_valid is False:
+                    print "Warning: Bin", i_E, 'fit did not converge. Trying with lower limit at 0'
+                    self.SetLimits(limits=(0., None), exceptionList=['DM'])
+                    results[i_E] = GammaLikelihood.RunLikelihoodBinByBin(bin=i_E, analysis=self, print_level=print_level,
+                                                                         error=error, precision=precision, tol=tol)
+
+
             # Calculate Fitting Errors.
             hesseList, minosList = [], []
             for m in results:
@@ -767,13 +828,16 @@ class Analysis():
                     self.loglike = []
 
             for i_E in range(self.n_bins):
-                if not results[i_E].get_fmin().is_valid:
+                if results[i_E].get_fmin().is_valid is False:
                     print 'WARNING: Fit for bin', i_E, 'is reported invalid'
 
                 # Append the log-likelihood of each bin.
                 self.loglike.append(results[i_E].fval)
 
                 if minosList[i_E] is None:
+                    if hesseList[i_E] is None:
+                        t.valueError.append(0.)
+                        continue
                     for h in hesseList[i_E]:
                         name = "_".join(h['name'].split('_')[:-1])
                         if h['is_fixed']:
@@ -809,7 +873,7 @@ class Analysis():
             raise Exception('No fit run, or template added since last fit. Call "RunLikelihood()"')
 
         # Start with a copy of the binned photons and iterate through each template.
-        residual = copy.copy(self.binned_data)
+        residual = copy.copy(self.binned_data).astype(np.float32)
         for key, t in self.templateList.items():
             # Make sure this template has been fit already
             if t.fixSpectrum or t.fixNorm:
@@ -882,7 +946,10 @@ class Analysis():
                 stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value[i_E])
                               / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
                 if name is not 'Data':
-                        fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError[i_E]
+                        try:
+                            fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError[i_E]
+                        except:
+                            fit_error = 0
                 if t.fixNorm:
                     fit_error = 0.
                 count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value[i_E]
@@ -1047,7 +1114,20 @@ class Analysis():
                 t.value = 1.
                 t.valueError = .1
 
+    def SetLimits(self, limits=[None, None], value=1., valueError=.1, exceptionList=None):
+        '''
+        Resets the fit values limits to the parameter values  If fits are not converging after changing
+        out some templates, use this.  Does not change values for fixed templates.
+        '''
 
+        for key, t in self.templateList.items():
+            if exceptionList is not None:
+                if key in exceptionList:
+                    continue
+            if not t.fixNorm:
+                t.limits = limits
+                # t.value = 1.
+                # t.valueError = .1
 
 
 

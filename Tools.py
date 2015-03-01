@@ -359,8 +359,8 @@ def InterpolateHealpix(healpixcube, energies,  E_min, E_max, E_bins=3, nside_out
 
     :param    healpixcube: a healpixcube with first dimension energy and second dimension the healpix index.
     :param    energies: a list of energies for the healpix cube in MeV.
-    :param    E_min: Min energy in MeV
-    :param    E_max: Max energy in MeV
+    :param    E_min: Min energy in MeV.
+    :param    E_max: Max energy in MeV.
     :param    E_bins: Number of subbins for integration.
     :param    nside_out: if not None, can specify a new nside for up/downsampling.
     :returns: Spectral subsampling of the input cartesian data cube with units in (s cm^2)^-1
