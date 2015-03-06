@@ -20,6 +20,11 @@ import cPickle as pickle
 import h5py
 from scipy.sparse import csr_matrix
 
+from astropy.wcs import WCS
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+
+
 class Analysis():
     #--------------------------------------------------------------------
     # Most binning settings follows Calore et al 2014 (1409.0042)
@@ -30,7 +35,7 @@ class Analysis():
                     phfile_raw='/data/fermi_data_1-8-14/phfile.txt',
                     scfile='/data/fermi_data_1-8-14/lat_spacecraft_merged.fits',
                     evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v14.fit',
-                    gtfilter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52"):
+                    gtfilter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52", templateDir='/data/Extended_archive_v15/Templates/'):
         """
         :param    E_min:        Min energy for recursive spectral binning
         :param    E_max:        Max energt for recursive spectral binning
@@ -47,7 +52,8 @@ class Analysis():
         :param    zmax:         zenith cut
         :param    irf:          Fermi irf name
         :param    fglpath:      Path to the 2FGL fits file
-        :param    gtfilter:       Filter string to pass to gtselect.
+        :param    gtfilter:     Filter string to pass to gtselect.
+        :param    templateDir:  Path to the directory containing spatial FITS templates for FGL sources.
         """
 
         self.E_min = E_min
@@ -71,7 +77,7 @@ class Analysis():
         self.psfFile = basepath + '/gtpsf_' + str(tag)+'.fits'
         self.expCube = basepath + '/gtexpcube2_' + str(tag)+'.fits'
         self.fglpath = fglpath
-
+        self.templateDir = templateDir + '/'
         
         # Currently Unassigned 
         self.binned_data = None  # master list of bin counts. 1st index is spectral, 2nd is pixel_number
@@ -196,7 +202,7 @@ class Analysis():
     #     self.AddTemplate(name, hpix, fixSpectrum, fixNorm, limits, value, ApplyIRF=False, sourceClass='PSC')
 
 
-    def AddFGLSource(self, idx, fix=False):
+    def AddFGLSource(self, idx, fixed=False):
         '''
         Add a single point source to the fit at index idx of the active PSC catalog (defined at Analysis.fglpath).
         :param idx: index of the point source to add.
@@ -207,28 +213,114 @@ class Analysis():
         try:
             t_sparse = csr_matrix(self.GenPointSourceTemplate(onlyidx=[idx, ], save=False, verbosity=0), dtype=np.float32)
             name = pyfits.open(self.fglpath)[1].data['Source_Name'][idx]
-            name = name.replace('+','p').replace(' ', '_').replace('-', 'n').replace('.', 'd')
+            # Extended sources not yet supported
+            if name[-1] == 'e':
+                print 'Warning: Extended source found in ROI. These are not yet supported.'
+                return
+            name = name.replace('+','p').replace(' ', '_').replace('-', 'n').replace('.', 'd')[1:]
             # Already convolved with IRF, so just add template to stack.
-            self.AddTemplate(name, t_sparse, fixSpectrum=fix, fixNorm=fix,
+            self.AddTemplate(name, t_sparse, fixSpectrum=fixed, fixNorm=fixed,
                              limits=[None, None], value=1., ApplyIRF=False, sourceClass='FGL')
         except:
             raise Exception("Index Error: Point Source index out of range for active catalog.")
 
 
-    def PopulateROI(self, center, radius, fix_radius=5.):
+    def PopulateROI(self, center, radius, fix_radius=5., include_point=True, include_extended=True, all=False):
         """
         Fills a rectangular region of interest with all FGL point sources.
         :param center: (lon,lat) of the ROI center
-        :param width: ROI is a square box with this half-width in degrees
+        :param width: ROI is a square box with this half-width in degrees.
         :param fix_radius: Sources farther than this from the center of the ROI have fixed normalization.
+        :param:
         :return: None
         """
 
         fgl = pyfits.open(self.fglpath)[1].data
-        l, b = fgl['GLON'], fgl['GLAT']
-        
-        fgl_idx = np.nonzero((np.abs(b-GLAT)<roi_radius) & (np.abs(l-GLON)<roi_radius))[0]
+        l, b = center
+        # Find soures impacting the ROI. We add 5 deg to this to ensure sources outside the ROI are included
+        # since their PSF can leak in.  These source mush be fixed (radius must be > fix_radius).
+        fgl_idx = np.nonzero((np.abs(b-fgl['GLAT']) < (radius+5.)) & (np.abs(l-fgl['GLON']) < (radius+5.)))[0]
+        # Compute angular distance from the center to each source.
+        dists = Tools.Dist(l, fgl['GLON'][fgl_idx], b, fgl['GLAT'][fgl_idx])
 
+        # Add each source to the template stack
+        for i, src_idx in enumerate(fgl_idx):
+            
+            fixed = False
+            if dists[i] > fix_radius:
+                fixed = True
+
+            # If extended... 
+            if fgl['Source_Name'][src_idx][-1] == 'e':
+                if include_extended:
+                    print '\rPopulating ROI with point sources: %i of %i' % (i+1, len(fgl_idx))
+                    self.AddExtendedSource(src_idx, fixed=fixed)
+
+            elif include_point:
+                print '\rPopulating ROI with point sources: %i of %i' % (i+1, len(fgl_idx)),
+                self.AddFGLSource(src_idx, fixed=fixed)
+        
+
+
+    def AddExtendedSource(self, idx_fgl, fixed=True):
+        """
+        Add a 3FGL extended source to the analysis. 
+        :param source: the source name ('2FGL_Name' in the extended source table, but 'Source_Name' in the main FGL catalog column.)
+        :param template_dir: Path to the directory containing FGL extended source fits templates.
+        :param fixed: Fix the source, or let it float.
+
+        :return: None
+        """
+
+        # Open FGL and look up the source name.
+        hdu = pyfits.open(self.fglpath)        
+        ext_name = hdu[1].data['Extended_Source_Name'][idx_fgl]
+        ext_idx = np.where(hdu[5].data['Source_Name']==ext_name)[0]        
+        fname = hdu[5].data['Spatial_Filename'][ext_idx][0]
+        # Open the file and remove erroneous header info. 
+        hdu_spatial = pyfits.open(self.templateDir+fname, mode='readonly')
+        try:
+            hdu_spatial[0].header.pop('COMMENT')
+        except:
+            pass
+        try:
+            hdu_spatial[0].header.pop('HISTORY')
+        except:
+            pass
+        
+        # Read the WCS coordinates
+        w = WCS(hdu_spatial[0].header, relax=False, fix=True)
+        
+        
+        # Init a blank healpix template
+        t = np.zeros(12*self.nside**2, dtype=np.float32)
+        # Map the FGL extended template into healpix space, row by row. 
+        for i_row in range(hdu_spatial[0].data.shape[0]):
+            # get lat/lon for each row
+            lon, lat = w.all_pix2world(i_row,np.arange(hdu_spatial[0].data.shape[1]), 0)
+            c_icrs = SkyCoord(ra=lon, dec=lat, frame='icrs', unit='degree')
+            lon,lat = c_icrs.galactic.l.degree, c_icrs.galactic.b.degree
+            # transform lat/lon to healpix
+            hpix_idx = Tools.ang2hpix(lon, lat, nside=self.nside)
+            # Add these counts to the healpix template
+            np.add.at(t, hpix_idx, hdu_spatial[0].data[i_row,:])
+            
+            
+        # Get the total number of counts from this source in each energy bin.  This will set the normalization
+        total_counts = np.sum(self.GenPointSourceTemplate(pscmap=None, onlyidx=[idx_fgl,], save=False, verbosity=0), axis=1)
+        
+        # Generate a master sourcemap for the extended source (spatial template for each energy bin). 
+        master_t = np.array([t for i_E, count in enumerate(total_counts)])
+        for i_E, count in enumerate(total_counts):
+            #master_t[i_E] = master_t[i_E]/np.sum(master_t[i_E])*count # normed to the expected PSC flux
+            # Apply the PSF 
+            master_t[i_E] = Tools.ApplyGaussianPSF(master_t[i_E], E_min=self.bin_edges[i_E], E_max=self.bin_edges[i_E+1], psfFile=self.psfFile, multiplier=1.)
+        
+        # Convert to sparse matrix for memory profile. 
+        t_sparse = csr_matrix(master_t , dtype=np.float32)
+        self.AddTemplate(hdu[5].data['Source_Name'][ext_idx][0].replace(' ',''), t_sparse, fixSpectrum=fixed, fixNorm=fixed,
+                                 limits=[None, None], value=1., ApplyIRF=False, sourceClass='FGL')
+    
 
     def RemoveAllPointSources(self):
         """
@@ -236,7 +328,7 @@ class Analysis():
         :return: None
         """
         for t in self.templateList.keys():
-            if t.sourceClass = 'FGL':
+            if t.sourceClass == 'FGL':
                 self.DeleteTemplate(t)
 
 
@@ -263,7 +355,7 @@ class Analysis():
                          ApplyIRF=False, sourceClass='PSC', multiplier=multiplier)
 
 
-    def GenPointSourceTemplate(self, pscmap=None, onlyidx=None, save=True, verbosity=1):
+    def GenPointSourceTemplate(self, pscmap=None, onlyidx=None, save=False, verbosity=1):
         """
         Generates a point source count map valid for the current analysis based on 2fgl catalog.  This can take a long
         time so it is usually done once and then saved.
@@ -359,7 +451,7 @@ class Analysis():
         """
         self.templateList.pop(name, None)
 
-    def AddIsotropicTemplate(self, isofile='./IGRB_ackerman_2014_modA.dat', fixNorm=False, fixSpectrum=True):
+    def AddIsotropicTemplate(self, isofile='./IGRB_ackerman_2014_modA.dat', fixNorm=False, fixSpectrum=False):
         """
         Generates an isotropic template from a spectral file and add it to the current templateList
 
@@ -533,7 +625,7 @@ class Analysis():
 
     def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
                tag='SNR_z4kpc_R20kpc_Ts150K_EBV2mag', verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3,
-               fixSpectrum=True, noPSF=False):
+               fixSpectrum=False, noPSF=False):
         """
         This method takes a base analysis prefix, along with an X_CO profile and generates the combined diffuse template,
         or components of the diffuse template.
@@ -634,7 +726,7 @@ class Analysis():
 
 
     def AddHDF5Template(self, hdf5file, verbosity=0, multiplier=1., bremsfrac=None, E_subsample=3,
-               fixSpectrum=False, noPSF=False, separate_ics=True):
+               fixSpectrum=False, noPSF=False, separate_ics=True, fix_ics=False, fix_brem=False):
         """
         This method takes a base analysis prefix, along with an X_CO profile and generates the combined diffuse template,
         or components of the diffuse template.
@@ -650,6 +742,8 @@ class Analysis():
         :param noPSF: Do not apply PSF if True.  Can enhance speed.
         :param separate_ics: If true, the CMB template and optical+far-infrared are treated as two templates.
             (normalization of OPT and FIR are linked)
+        :param fix_ics: If true and separate_ics==False, the norm of the ICS template is fixed to the galprop prediction
+        :param fix_brem: If true and bremsfrac==None, the norm of the brem template is fixed to the galprop prediction
         """
 
         #---------------------------------------------------------------------------------
@@ -725,11 +819,11 @@ class Analysis():
             self.AddTemplate(name='ICS_OPT_FIR', healpixCube=comps_new['ics_optfir'], fixSpectrum=fixSpectrum, fixNorm=False,
                                value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
         else:
-            self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=fixSpectrum, fixNorm=False,
+            self.AddTemplate(name='ICS', healpixCube=comps_new['ics'], fixSpectrum=fixSpectrum, fixNorm=fix_ics,
                                value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
 
         if bremsfrac is None:
-            self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=fixSpectrum, fixNorm=False,
+            self.AddTemplate(name='Brems', healpixCube=comps_new['brem'], fixSpectrum=fixSpectrum, fixNorm=fix_brem,
                                value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
             self.AddTemplate(name='Pi0', healpixCube=comps_new['pi0'], fixSpectrum=fixSpectrum, fixNorm=False,
                                value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier, noPSF=noPSF)
@@ -759,7 +853,7 @@ class Analysis():
         # First, check whether all bins need to be fit simultaneously, or can be decoupled.
         binbybin = True
         for key, t in self.templateList.items():
-            if not t.fixNorm and t.fixSpectrum:
+            if ((not t.fixNorm) and t.fixSpectrum):
                 binbybin = False
 
         if not binbybin:
@@ -880,9 +974,12 @@ class Analysis():
                 residual -= t.value*t.healpixCube
             else:
                 for i_E in range(self.n_bins):
-                    residual[i_E] -= t.value[i_E]*t.healpixCube[i_E]
+                    if t.sourceClass == 'FGL':
+                        residual[i_E] -= t.value[i_E]*t.healpixCube[i_E].toarray()[0]*self.mask
+                    else:
+                        residual[i_E] -= t.value[i_E]*t.healpixCube[i_E]*self.mask
 
-        return residual*self.mask
+        return residual
 
     def GetSpectrum(self, name):
         """
@@ -989,7 +1086,7 @@ class Analysis():
 
 
     def AddFermiBubbleTemplate(self, template_file='./bubble_templates_diskcut30.0.fits',
-                               spec_file='./reduced_bubble_spec_apj_793_64.dat', fixSpectrum=True, fixNorm=False):
+                               spec_file='./reduced_bubble_spec_apj_793_64.dat', fixSpectrum=False, fixNorm=False):
         """
         Adds a fermi bubble template to the template stack.
 

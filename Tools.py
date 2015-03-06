@@ -279,6 +279,23 @@ def GetSpectralIndex(E_min, E_max):
     return -np.log(dnde[E_bin_min]/dnde[E_bin_max])/np.log(E[E_bin_min]/E[E_bin_max])
 
 
+def Dist(l1, l2, b1, b2):
+    """
+    :param l1: longitude of position 1
+    :param l2: longitude of position 2
+    :param b1: latitude of position 1
+    :param b2: latitude of position 2
+    :return: Angular distance in degrees between positions 1 and 2.
+    """
+    dLam = np.deg2rad(np.abs(np.array(b1)-np.array(b2)))
+    l1 = np.deg2rad(l1)
+    l2 = np.deg2rad(l2)
+
+    d = np.arctan2(np.sqrt(np.square(np.cos(l2)*np.sin(dLam))
+                           + np.square(np.cos(l1)*np.sin(l2) - np.sin(l1)*np.cos(l2)*np.cos(dLam))),
+                             np.sin(l1)*np.sin(l2)+np.cos(l1)*np.cos(l2)*np.cos(dLam))
+    return np.rad2deg(d)
+
 def CartesianCountMap2Healpix(cartCube, nside):
     """
     This is a static function which takes an input cartesian datacube and returns a 2d healpix array.

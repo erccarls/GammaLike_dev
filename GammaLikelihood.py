@@ -320,6 +320,7 @@ def RunLikelihoodBinByBin(bin, analysis, print_level=0, use_basinhopping=False, 
 
     if analysis.psc_weights is None:
         print 'Warning! Pixel weights not initialized.  Default to equal weighting.'
+        analysis.psc_weights = np.ones(shape)
 
     #---------------------------------------------------------------------------
     # Select only unmasked pixels.  Less expensive to do here rather than later.
