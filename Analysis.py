@@ -38,7 +38,7 @@ class Analysis():
                     gtfilter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52", templateDir='/data/Extended_archive_v15/Templates/'):
         """
         :param    E_min:        Min energy for recursive spectral binning
-        :param    E_max:        Max energt for recursive spectral binning
+        :param    E_max:        Max energy for recursive spectral binning
         :param    n_bins:       Number of recursive spectal bins. Specify zero if custom bins are supplied.
         :param    gamma:        Power-law index for recursive binning
         :param    nside:        Number of healpix spatial bins
@@ -225,7 +225,7 @@ class Analysis():
             raise Exception("Index Error: Point Source index out of range for active catalog.")
 
 
-    def PopulateROI(self, center, radius, fix_radius=5., include_point=True, include_extended=True, all=False):
+    def PopulateROI(self, center, radius, fix_radius=5., include_point=True, include_extended=True):
         """
         Fills a rectangular region of interest with all FGL point sources.
         :param center: (lon,lat) of the ROI center
@@ -290,8 +290,7 @@ class Analysis():
         
         # Read the WCS coordinates
         w = WCS(hdu_spatial[0].header, relax=False, fix=True)
-        
-        
+
         # Init a blank healpix template
         t = np.zeros(12*self.nside**2, dtype=np.float32)
         # Map the FGL extended template into healpix space, row by row. 
@@ -299,28 +298,31 @@ class Analysis():
             # get lat/lon for each row
             lon, lat = w.all_pix2world(i_row,np.arange(hdu_spatial[0].data.shape[1]), 0)
             c_icrs = SkyCoord(ra=lon, dec=lat, frame='icrs', unit='degree')
-            lon,lat = c_icrs.galactic.l.degree, c_icrs.galactic.b.degree
+            lon, lat = c_icrs.galactic.l.degree, c_icrs.galactic.b.degree
             # transform lat/lon to healpix
             hpix_idx = Tools.ang2hpix(lon, lat, nside=self.nside)
             # Add these counts to the healpix template
-            np.add.at(t, hpix_idx, hdu_spatial[0].data[i_row,:])
-            
+            np.add.at(t, hpix_idx, hdu_spatial[0].data[i_row, :])
             
         # Get the total number of counts from this source in each energy bin.  This will set the normalization
-        total_counts = np.sum(self.GenPointSourceTemplate(pscmap=None, onlyidx=[idx_fgl,], save=False, verbosity=0), axis=1)
+        total_counts = np.sum(self.GenPointSourceTemplate(pscmap=None, onlyidx=[idx_fgl,],
+                                                          save=False, verbosity=0, ignore_ext=False), axis=1)
         
         # Generate a master sourcemap for the extended source (spatial template for each energy bin). 
         master_t = np.array([t for i_E, count in enumerate(total_counts)])
         for i_E, count in enumerate(total_counts):
-            #master_t[i_E] = master_t[i_E]/np.sum(master_t[i_E])*count # normed to the expected PSC flux
+            master_t[i_E] = master_t[i_E]/np.sum(master_t[i_E])*count # normed to the expected PSC flux
             # Apply the PSF 
             master_t[i_E] = Tools.ApplyGaussianPSF(master_t[i_E], E_min=self.bin_edges[i_E], E_max=self.bin_edges[i_E+1], psfFile=self.psfFile, multiplier=1.)
-        
+            #master_t[i_E] = Tools.ApplyPSF(master_t[i_E], E_min=self.bin_edges[i_E], E_max=self.bin_edges[i_E+1], PSFFile=self.psfFile, smoothed=False)
+        # Don't allow the ALM of the PSF convolution to produce small negative values.
+        # This is a count map so 1e-5 is totally negligible. This also cuts out artifacts from PSF convolution.
+        master_t = master_t.clip(1e-5, 1e50)
         # Convert to sparse matrix for memory profile. 
-        t_sparse = csr_matrix(master_t , dtype=np.float32)
-        self.AddTemplate(hdu[5].data['Source_Name'][ext_idx][0].replace(' ',''), t_sparse, fixSpectrum=fixed, fixNorm=fixed,
-                                 limits=[None, None], value=1., ApplyIRF=False, sourceClass='FGL')
-    
+        t_sparse = csr_matrix(master_t, dtype=np.float32)
+        self.AddTemplate(hdu[5].data['Source_Name'][ext_idx][0].replace(' ', '').replace('-', 'n').replace('+', 'p').replace('.', '_'), t_sparse, fixSpectrum=fixed, fixNorm=fixed,
+                         limits=[None, None], value=1., ApplyIRF=False, sourceClass='FGL')
+        return t_sparse
 
     def RemoveAllPointSources(self):
         """
@@ -355,7 +357,7 @@ class Analysis():
                          ApplyIRF=False, sourceClass='PSC', multiplier=multiplier)
 
 
-    def GenPointSourceTemplate(self, pscmap=None, onlyidx=None, save=False, verbosity=1):
+    def GenPointSourceTemplate(self, pscmap=None, onlyidx=None, save=False, verbosity=1, ignore_ext=True):
         """
         Generates a point source count map valid for the current analysis based on 2fgl catalog.  This can take a long
         time so it is usually done once and then saved.
@@ -375,6 +377,7 @@ class Analysis():
                                            maxpsf = 7.5,
                                            res=0.125,
                                            nside=self.nside,
+                                           ignore_ext=ignore_ext,
                                            filename=pscmap, onlyidx=onlyidx, verbosity=verbosity)
 
         return total_map
@@ -436,6 +439,8 @@ class Analysis():
                     healpixCube[i_E] = Tools.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
                                                       self.psfFile, self.expCube, multiplier=multiplier,
                                                       expMap=self.expMap[i_E], noPSF=noPSF)
+            # Clip at zero. For delta functions, the PSF convolution from healpix ALM's can produce small negative numbers.
+            healpixCube = healpixCube.clip(0, 1e50)
 
         # Instantiate the template object. 
         template = Template.Template(healpixCube.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass,
@@ -799,7 +804,7 @@ class Analysis():
 
         # For each component, run the async sampling/sizing.
         for key in comps:
-            if verbosity>0:
+            if verbosity > 0:
                 print 'Integrating and Resampling', key, 'templates...'
                 sys.stdout.flush()
             RunAsync(key)
@@ -835,7 +840,7 @@ class Analysis():
 
 
     def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e2,
-                      precision=None, error=0.1, minos=True):
+                      precision=None, error=0.1, minos=True, force_cpu=False):
         """
         Runs the likelihood analysis on the current templateList.
 
@@ -863,7 +868,8 @@ class Analysis():
                                                                                 niter_success=niter_success,
                                                                                 tol=tol,
                                                                                 precision=precision,
-                                                                                error=error)
+                                                                                error=error,
+                                                                                force_cpu=force_cpu)
                 # -------------------------------------------------------------
                 # UPDATE THE TEMPLATE VALUES AND ERRORS WITH THE FIT RESULTS
                 for key, t in self.templateList.items():

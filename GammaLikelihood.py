@@ -50,7 +50,10 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     for key, t in analysis.templateList.items():
         tmpcube = np.zeros(shape=(t.healpixCube.shape[0], len(mask_idx)))
         for Ebin in range(t.healpixCube.shape[0]):
-            tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx]
+            if t.sourceClass == 'FGL':
+                tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx].toarray()[0]
+            else:
+                tmpcube[Ebin] = t.healpixCube[Ebin, mask_idx]
         t.healpixCubeMasked = tmpcube
 
     # mask the data as well.

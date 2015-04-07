@@ -6,11 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="106cb39c-4895-4b73-a64c-c5a1bad85918" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Analysis.py" afterPath="$PROJECT_DIR$/Analysis.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Ensemble Plots B.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Ensemble Plots B.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GCE - Compare Gas Models.ipynb" afterPath="$PROJECT_DIR$/GCE - Compare Gas Models.ipynb" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GammaLikelihood.py" afterPath="$PROJECT_DIR$/GammaLikelihood.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HDF5 Tests.ipynb" afterPath="$PROJECT_DIR$/HDF5 Tests.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Healpix Compare .ipynb" afterPath="$PROJECT_DIR$/Healpix Compare .ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Pohl H2.ipynb" afterPath="$PROJECT_DIR$/Pohl H2.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Reduce Num Rings.ipynb" afterPath="$PROJECT_DIR$/Reduce Num Rings.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SourceMap.py" afterPath="$PROJECT_DIR$/SourceMap.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="GCE_sys.iws" />
@@ -44,8 +43,8 @@
       <file leaf-file-name="Tools.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Tools.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="3414" max-vertical-offset="8586">
-              <caret line="211" column="70" selection-start-line="211" selection-start-column="70" selection-end-line="211" selection-end-column="70" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="3720" max-vertical-offset="8892">
+              <caret line="228" column="40" selection-start-line="228" selection-start-column="40" selection-end-line="228" selection-end-column="40" />
               <folding>
                 <element signature="e#365#383#0" expanded="true" />
               </folding>
@@ -56,8 +55,8 @@
       <file leaf-file-name="SourceMap.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SourceMap.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1332" max-vertical-offset="3150">
-              <caret line="130" column="44" selection-start-line="130" selection-start-column="44" selection-end-line="130" selection-end-column="44" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1530" max-vertical-offset="3330">
+              <caret line="141" column="44" selection-start-line="141" selection-start-column="44" selection-end-line="141" selection-end-column="44" />
               <folding />
             </state>
           </provider>
@@ -76,8 +75,8 @@
       <file leaf-file-name="GammaLikelihood.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="2568" max-vertical-offset="13662">
-              <caret line="165" column="28" selection-start-line="165" selection-start-column="28" selection-end-line="165" selection-end-column="28" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="2622" max-vertical-offset="13788">
+              <caret line="168" column="28" selection-start-line="168" selection-start-column="28" selection-end-line="168" selection-end-column="28" />
               <folding />
             </state>
           </provider>
@@ -86,11 +85,11 @@
       <file leaf-file-name="Analysis.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Analysis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-2.631579" vertical-offset="3024" max-vertical-offset="19620">
-              <caret line="18" column="24" selection-start-line="18" selection-start-column="24" selection-end-line="18" selection-end-column="24" />
+            <state vertical-scroll-proportion="0.32160312" vertical-offset="3163" max-vertical-offset="22356">
+              <caret line="194" column="27" selection-start-line="194" selection-start-column="27" selection-end-line="194" selection-end-column="27" />
               <folding>
-                <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-                <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+                <element signature="e#289#307#0" expanded="true" />
+                <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
               </folding>
             </state>
           </provider>
@@ -99,10 +98,10 @@
       <file leaf-file-name="DM.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/DM.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="5076" max-vertical-offset="6066">
-              <caret line="266" column="0" selection-start-line="266" selection-start-column="0" selection-end-line="266" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="5130" max-vertical-offset="6120">
+              <caret line="269" column="0" selection-start-line="269" selection-start-column="0" selection-end-line="269" selection-end-column="0" />
               <folding>
-                <marker date="1424066281000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+                <marker date="1424274132325" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
               </folding>
             </state>
           </provider>
@@ -142,8 +141,8 @@
         <option value="$PROJECT_DIR$/Tools.py" />
         <option value="$PROJECT_DIR$/SourceMap.py" />
         <option value="$PROJECT_DIR$/DM.py" />
-        <option value="$PROJECT_DIR$/Analysis.py" />
         <option value="$PROJECT_DIR$/GammaLikelihood.py" />
+        <option value="$PROJECT_DIR$/Analysis.py" />
       </list>
     </option>
   </component>
@@ -151,7 +150,8 @@
     <detection-done>true</detection-done>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="y" value="52" />
+    <option name="x" value="9" />
+    <option name="y" value="108" />
     <option name="width" value="1920" />
     <option name="height" value="1180" />
   </component>
@@ -181,7 +181,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -202,6 +201,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -542,8 +542,8 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="52" width="1920" height="1180" extended-state="7" />
-    <editor active="false" />
+    <frame x="9" y="108" width="1920" height="1180" extended-state="1" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -551,7 +551,7 @@
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.1814301" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.18569905" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
@@ -627,8 +627,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="1604" max-vertical-offset="19080">
           <caret line="251" column="61" selection-start-line="251" selection-start-column="61" selection-end-line="251" selection-end-column="61" />
           <folding>
-            <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-            <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -638,7 +638,7 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="5076" max-vertical-offset="6066">
           <caret line="266" column="0" selection-start-line="266" selection-start-column="0" selection-end-line="266" selection-end-column="0" />
           <folding>
-            <marker date="1424066281000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1424274132325" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -690,8 +690,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="1568" max-vertical-offset="15048">
           <caret line="249" column="61" selection-start-line="249" selection-start-column="61" selection-end-line="249" selection-end-column="61" />
           <folding>
-            <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-            <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -701,7 +701,7 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="4896" max-vertical-offset="5886">
           <caret line="256" column="0" selection-start-line="256" selection-start-column="0" selection-end-line="256" selection-end-column="0" />
           <folding>
-            <marker date="1424066281000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1424274132325" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -753,8 +753,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="6114" max-vertical-offset="13734">
           <caret line="375" column="69" selection-start-line="375" selection-start-column="69" selection-end-line="375" selection-end-column="69" />
           <folding>
-            <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-            <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -764,7 +764,7 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="5886">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <marker date="1424066281000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1424274132325" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -816,8 +816,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="4805" max-vertical-offset="13716">
           <caret line="295" column="20" selection-start-line="295" selection-start-column="20" selection-end-line="295" selection-end-column="20" />
           <folding>
-            <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-            <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -853,8 +853,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="12366" max-vertical-offset="13374">
           <caret line="724" column="0" selection-start-line="724" selection-start-column="0" selection-end-line="724" selection-end-column="0" />
           <folding>
-            <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-            <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -890,8 +890,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="10386" max-vertical-offset="11412">
           <caret line="614" column="0" selection-start-line="614" selection-start-column="0" selection-end-line="614" selection-end-column="0" />
           <folding>
-            <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-            <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -924,8 +924,8 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="1608" max-vertical-offset="6732">
           <caret line="115" column="47" selection-start-line="115" selection-start-column="47" selection-end-line="115" selection-end-column="47" />
           <folding>
-            <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-            <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -1002,10 +1002,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/DM.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="5076" max-vertical-offset="6066">
-          <caret line="266" column="0" selection-start-line="266" selection-start-column="0" selection-end-line="266" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="5130" max-vertical-offset="6120">
+          <caret line="269" column="0" selection-start-line="269" selection-start-column="0" selection-end-line="269" selection-end-column="0" />
           <folding>
-            <marker date="1424066281000" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <marker date="1424274132325" expanded="true" signature="772:857" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>
@@ -1020,8 +1020,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SourceMap.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1332" max-vertical-offset="3150">
-          <caret line="130" column="44" selection-start-line="130" selection-start-column="44" selection-end-line="130" selection-end-column="44" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="1530" max-vertical-offset="3330">
+          <caret line="141" column="44" selection-start-line="141" selection-start-column="44" selection-end-line="141" selection-end-column="44" />
           <folding />
         </state>
       </provider>
@@ -1036,8 +1036,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Tools.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="3414" max-vertical-offset="8586">
-          <caret line="211" column="70" selection-start-line="211" selection-start-column="70" selection-end-line="211" selection-end-column="70" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="3720" max-vertical-offset="8892">
+          <caret line="228" column="40" selection-start-line="228" selection-start-column="40" selection-end-line="228" selection-end-column="40" />
           <folding>
             <element signature="e#365#383#0" expanded="true" />
           </folding>
@@ -1046,19 +1046,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/GammaLikelihood.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="2568" max-vertical-offset="13662">
-          <caret line="165" column="28" selection-start-line="165" selection-start-column="28" selection-end-line="165" selection-end-column="28" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="2622" max-vertical-offset="13788">
+          <caret line="168" column="28" selection-start-line="168" selection-start-column="28" selection-end-line="168" selection-end-column="28" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Analysis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-2.631579" vertical-offset="3024" max-vertical-offset="19620">
-          <caret line="18" column="24" selection-start-line="18" selection-start-column="24" selection-end-line="18" selection-end-column="24" />
+        <state vertical-scroll-proportion="0.32160312" vertical-offset="3163" max-vertical-offset="22356">
+          <caret line="194" column="27" selection-start-line="194" selection-start-column="27" selection-end-line="194" selection-end-column="27" />
           <folding>
-            <marker date="1424206728000" expanded="true" signature="13310:14241" placeholder="&quot;&quot;&quot;Add Template to the template list....&quot;&quot;&quot;" />
-            <marker date="1424206728000" expanded="true" signature="26050:26934" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
+            <element signature="e#289#307#0" expanded="true" />
+            <marker date="1426570567000" expanded="true" signature="1542:2804" placeholder="&quot;&quot;&quot;...&quot;&quot;&quot;" />
           </folding>
         </state>
       </provider>

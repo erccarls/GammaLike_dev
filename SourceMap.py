@@ -13,7 +13,8 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
                  nside=256,
                  onlyidx=None,
                  filename=None,
-                 verbosity=1):
+                 verbosity=1,
+                 ignore_ext=True):
     """
     This method generates a source map based on an input catalog implementing the following procedure:
     1. Integrate given spectrum to 2FGL over each energy bin to obtain counts/cm^2/s
@@ -33,6 +34,8 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
     :param res: subresolution for mapping PSF smearing onto healpix grid.
     :param nside: healpix nside parameter.
     :param filename: output the resultant map to a numpy array.
+    :param ignore_ext: If true, does not include extended sources. If false, only the total counts
+            for the extended maps are correct.
     :returns PSC Map: A healpix 'cube' for the point sources.
     """
     # Load FGL cat
@@ -54,12 +57,13 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
 
     # Iterate over sources
     for i_idx, idx in enumerate(idx_all):
-        if fgl_data['Source_Name'][idx][-1] == 'e':
+        if (fgl_data['Source_Name'][idx][-1] == 'e') and ignore_ext:
             continue
         # Debug
         if onlyidx is not None:
             if idx not in onlyidx:
                 continue
+
 
         # -----------------------------------------------------------
         # First we determine the number of counts.
@@ -80,12 +84,14 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
             b = fgl_data['Exp_Index'][idx]
         except:
             pass
-
+        #print spectype
         # Find the Normalization and integrate the spectrum over each energy bin
         if spectype == 'PowerLaw':
             norm = fluxdens/spec(pivot, specindex)
             counts = norm*np.array([integratedspec(bin_edges[i_E], bin_edges[i_E+1], specindex)
                                     for i_E in range(len(bin_edges)-1)])
+
+
             psfWeights = spec(energies, specindex)
 
         elif spectype == 'PLExpCutoff':
@@ -108,6 +114,7 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
         # Now counts contains ph/cm^2/s^2 for each bin so we need to get the effective area in each bin.
         exposure = np.array([Tools.GetExpMap(bin_edges[i_E], bin_edges[i_E+1], glon, glat, expcube)
                              for i_E in range(len(bin_edges)-1)])
+
         # Now the counts are in actual counts
         counts = counts*exposure
 
@@ -117,10 +124,13 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
         size = 2*maxpsf/res+1
         lats, lons = np.linspace(-maxpsf, maxpsf, size), np.linspace(-maxpsf, maxpsf, size)
 
+
+
         # Calculate the reweighted PSF in each energy bin for this source's spectrum.
         for i_E in range(len(bin_edges)-1):
             e1, e2 = bin_edges[i_E], bin_edges[i_E+1]
             eb1, eb2 = np.argmin(np.abs(energies-e1)), np.argmin(np.abs(energies-e2))
+
             avgPSF = np.average(psfs[eb1:eb2+1], weights=psfWeights[eb1:eb2+1], axis=0)
             avgPSFInterp = lambda r: np.interp(r, thetas, avgPSF)
 
@@ -160,7 +170,6 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
                 # Add the values to the healpix grid.  Must use this 'at' method in order to
                 # correctly add repeated indices.
                 np.add.at(pscmap[i_E], hpix_idx, cartMap[i_lat])
-            # print cartMap.sum()
 
         if (i_idx % 1) == 0 and verbosity > 0:
             print '\rGenerating Point Source Map:', '%2.2f' % (np.float(i_idx)/len(idx_all)*100.), '%',
