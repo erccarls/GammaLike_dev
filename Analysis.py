@@ -262,14 +262,15 @@ class Analysis():
         
 
 
-    def AddExtendedSource(self, idx_fgl, fixed=True):
+    def AddExtendedSource(self, idx_fgl, fixed=True, add_template=True):
         """
         Add a 3FGL extended source to the analysis. 
         :param source: the source name ('2FGL_Name' in the extended source table, but 'Source_Name' in the main FGL catalog column.)
         :param template_dir: Path to the directory containing FGL extended source fits templates.
         :param fixed: Fix the source, or let it float.
+        :param add_template: Add the template to the stack?
 
-        :return: None
+        :return: scipy.sparse.csr_matrix with extended source. To convert to full healpix array call ".toarray()"
         """
 
         # Open FGL and look up the source name.
@@ -936,7 +937,7 @@ class Analysis():
 
                 if minosList[i_E] is None:
                     if hesseList[i_E] is None:
-                        t.valueError.append(0.)
+                        t.valueError.append(np.array((0., 0.)))
                         continue
                     for h in hesseList[i_E]:
                         name = "_".join(h['name'].split('_')[:-1])
@@ -945,7 +946,7 @@ class Analysis():
                         t = self.templateList[name]
 
                         t.value[i_E] = h['value']
-                        t.valueError.append(h['error'])
+                        t.valueError.append(np.array((h['error'], h['error'])))
                 else:
                     for key, err in minosList[i_E].items():
                         name = "_".join(key.split('_')[:-1])
@@ -977,11 +978,16 @@ class Analysis():
         for key, t in self.templateList.items():
             # Make sure this template has been fit already
             if t.fixSpectrum or t.fixNorm:
-                residual -= t.value*t.healpixCube
+
+                if t.sourceClass == 'FGL':
+                    #print t.healpixCube.toarray().shape
+                    residual -= t.value*t.healpixCube.toarray()[0]*self.mask
+                else:
+                    residual -= t.value*t.healpixCube*self.mask
             else:
                 for i_E in range(self.n_bins):
                     if t.sourceClass == 'FGL':
-                        residual[i_E] -= t.value[i_E]*t.healpixCube[i_E].toarray()[0]*self.mask
+                        residual[i_E] -= t.value[i_E]*t.healpixCube.toarray()[i_E]*self.mask
                     else:
                         residual[i_E] -= t.value[i_E]*t.healpixCube[i_E]*self.mask
 
@@ -1032,13 +1038,22 @@ class Analysis():
                             * healpy.pixelfunc.nside2pixarea(self.nside))
             # if value is not a vector
             if np.ndim(t.value) == 0:
-                stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)
-                              / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
-                count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value
+                #stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)
+                #              / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
+                stat_error = 0 # Now that we are using iMinuit minos etc.. instead of just poisson errors.
+                
+                if t.sourceClass == 'FGL':
+                    count = np.average(t.healpixCube.toarray()[i_E][mask_idx]/eff_area)*t.value
+                else:
+                    
+                    count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value
                 # No fit errors on data.
                 if name is not 'Data' and t.fixNorm is False:
                     try:
-                        fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError
+                        if t.sourceClass == 'FGL':
+                            fit_error = np.average(t.healpixCube.toarray()[i_E][mask_idx]/eff_area)*t.valueError
+                        else:
+                            fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError
                     except:
                         fit_error = 0.
                 if t.fixNorm:
@@ -1046,16 +1061,27 @@ class Analysis():
 
             # if value is a vector
             elif np.ndim(t.value) == 1 and len(t.value) == self.n_bins:
-                stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value[i_E])
-                              / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
+                
+                #stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value[i_E])
+                #              / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
+                stat_error = 0 # Now that we are using iMinuit minos etc.. instead of just poisson errors.
+                
                 if name is not 'Data':
+
                         try:
-                            fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError[i_E]
+                            if t.sourceClass == 'FGL':
+                                fit_error = np.average(t.healpixCube.toarray()[i_E][mask_idx]/eff_area)*t.valueError[i_E]
+                            else:
+                                fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError[i_E]
+                                
                         except:
                             fit_error = 0
                 if t.fixNorm:
                     fit_error = 0.
-                count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value[i_E]
+                if t.sourceClass == 'FGL':
+                    count = np.average(t.healpixCube.toarray()[i_E][mask_idx]/eff_area)*t.value[i_E]
+                else:
+                    count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value[i_E]
             else:
                 raise Exception("template.value attribute has invalid dimension or type.")
             flux.append(count)
@@ -1063,11 +1089,12 @@ class Analysis():
                 errors.append(np.array(stat_error))
             else:
                 if np.ndim(fit_error) == 0:
-                    errors.append(np.sqrt(np.array(stat_error)**2+np.array(fit_error)**2))
+                    err = np.sqrt(np.array(stat_error)**2+np.array(fit_error)**2)
+                    errors.append((err,err))
                 if np.ndim(fit_error) == 1:
-                    errors.append(np.array((np.sqrt(np.array(stat_error)**2+np.array(fit_error[0])**2),
-                                            np.sqrt(np.array(stat_error)**2+np.array(fit_error[1])**2))))
-
+                    errors.append((np.sqrt(np.array(stat_error)**2+np.array(fit_error[0])**2),
+                                            np.sqrt(np.array(stat_error)**2+np.array(fit_error[1])**2)))
+                    
         return self.central_energies, np.array(flux), np.array(errors)
 
 
