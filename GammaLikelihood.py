@@ -161,13 +161,25 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     f.write("""
 import numpy as np 
 import time 
+# import theano
+# import theano.tensor as T
+# from theano import function
+# import theano
+import os
 
 class like():
     def __init__(self, templateList, data, psc_weights, force_cpu):
+        # Configure Theano 
+        # os.environ['THEANO_FLAGS'] = os.environ.get('THEANO_FLAGS', '') + ',openmp=true'
+        # os.environ['OMP_NUM_THREADS'] = '12'
+        # theano.config.openmp =True
+        # theano.config.openmp_elemwise_minsize = 100000000
+
         self.templateList = templateList
         self.data = data
         self.use_cuda = True
         self.psc_weights = psc_weights
+        self.counts = 0
         try:
             import cudamat as cm
             self.cm = cm
@@ -177,6 +189,12 @@ class like():
             self.cm_psc_weights = cm.CUDAMatrix(psc_weights)
         except:
             self.use_cuda = False
+            # Theano Specific
+            # data = T.dmatrix('data')
+            # model = T.dmatrix('model')
+            # psc_weights = T.dmatrix('psc_weights')
+            # result = T.sum(psc_weights*(model-data*T.log(model)))
+            # self.eval = function([data,model,psc_weights], result)
 
         if force_cpu:
             self.use_cuda = False
@@ -185,15 +203,26 @@ class like():
 
     def f(self,"""+args+"""):
         # init model array 
+        # start = time.time()
         model = np.zeros(shape=self.templateList[self.templateList.keys()[0]].healpixCubeMasked.shape)
         # sum the models 
 """ + master_model +"""
 """ + extConstraint + """
 
+        # print 'addition', time.time()-start
+
         #------------------------------------------------
         # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
         if self.use_cuda == False:
+            # start = time.time()
             neg_loglikelihood = np.sum(self.psc_weights*(model-self.data*np.log(model)))
+            # print 'like_eval_numpy', time.time()-start
+
+            # For Theano instead of numpy
+            # start = time.time()
+            # neg_loglikelihood = self.eval(self.data, model, self.psc_weights) 
+            # print 'like_eval_theano', time.time()-start
+
         
         #------------------------------------------------
         # Uncomment here for GPU mode using CUDA + cudamat libraries
@@ -203,8 +232,9 @@ class like():
             self.cm.cublas_init()
             neg_loglikelihood = cmModel_orig.subtract(self.cm.log(cmModel).mult(self.cmData)).mult(self.cm_psc_weights).sum(axis=0).sum(axis=1).asarray()[0,0]
 
-        #if self.ncall%500==0: print self.ncall, neg_loglikelihood
-        #self.ncall+=1
+        if self.ncall%5==0: 
+            print "\\r","ncall/-LL", self.ncall, neg_loglikelihood,
+        self.ncall+=1
 
         return neg_loglikelihood + chi2_ext/2.
         
@@ -231,6 +261,7 @@ class like():
     #---------------------------------------------------------------------------
     # Now load the source 
     foo = imp.load_source('tmplike', f.name)
+
     if print_level > 0:
         print "Code generation completed in", "{:10.4e}".format(time.time()-start), 's'
         try:
@@ -247,7 +278,7 @@ class like():
     m.tol = tol  # TODO: why does m.tol need to be so big to converge when errors are very small????
     #m.migrad(ncall=200000, precision=1e-15)
     if not start_fresh:
-        m.migrad(ncall=1e6, precision=precision)
+        m.migrad(ncall=1e6)#, precision=precision)
 
     #m.minos(maxcall=10000,sigma=2.)
 
@@ -514,7 +545,7 @@ class like():
     # Init migrad
     m = Minuit(like.f, **kwargs)
     m.tol = tol  # TODO: why does m.tol need to be so big to converge when errors are very small????
-    m.migrad(ncall=5e4, precision=precision)
+    m.migrad(ncall=5e4)#, precision=precision)
 
     #m.minos(maxcall=10000,sigma=2.)
 

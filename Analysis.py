@@ -428,23 +428,25 @@ class Analysis():
         # Error Checking on shape of input cube. 
         if (healpixCube.shape[0] != (len(self.bin_edges)-1)) or (healpixCube.shape[1] != (12*self.nside**2)):
             raise(Exception("Shape of template does not match binning"))
-
+        
+        healpixCube2 = copy.copy(healpixCube)
         if ApplyIRF:
             for i_E in range(len(self.bin_edges)-1):
                 if sourceClass == 'ISO':
-                    healpixCube[i_E] = Tools.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
+                    healpixCube2[i_E] = Tools.ApplyIRF(healpixCube2[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
                                                       self.psfFile, self.expCube, noPSF=True, expMap=self.expMap[i_E])
                 else:
                     # This can be expensive if applying the PSF due to spherical harmonic transforms.
                     # This is already multithreaded in healpy.
-                    healpixCube[i_E] = Tools.ApplyIRF(healpixCube[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
+                    healpixCube2[i_E] = Tools.ApplyIRF(healpixCube2[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
                                                       self.psfFile, self.expCube, multiplier=multiplier,
                                                       expMap=self.expMap[i_E], noPSF=noPSF)
+                        
             # Clip at zero. For delta functions, the PSF convolution from healpix ALM's can produce small negative numbers.
-            healpixCube = healpixCube.clip(0, 1e50)
+            healpixCube = healpixCube2.clip(0, 1e50)
 
         # Instantiate the template object. 
-        template = Template.Template(healpixCube.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass,
+        template = Template.Template(healpixCube2.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass,
                                      valueUnc)
         # Add the instance to the master template list.
         self.templateList[name] = template
@@ -1137,9 +1139,9 @@ class Analysis():
         bubble = hdu[1].data['TEMPLATE'][bub_idx][0]
 
         # Resize template if need be.
-        nside_in = np.sqrt(bubble.shape[0]/12)
-        if nside_in is not self.nside:
-            Tools.ResizeHealpix(bubble, self.nside, average=True)
+        nside_in = int(np.sqrt(bubble.shape[0]/12))
+        if nside_in != self.nside:
+            bubble = Tools.ResizeHealpix(bubble, self.nside, average=True)
 
         energy, dnde, dnde_unc = np.genfromtxt(spec_file).T
         spec = lambda e: np.interp(e, energy, dnde)
@@ -1179,7 +1181,7 @@ class Analysis():
         :return: None
         """
 
-        l, b = Tools.hpix2ang(np.arange(12*self.nside**2))
+        l, b = Tools.hpix2ang(np.arange(12*self.nside**2), nside=self.nside)
         healpixcube = np.zeros((self.n_bins, len(l)), dtype=np.float32)
         for i_E in range(self.n_bins):
             healpixcube[i_E] = Tools.GetExpMap(E_min=self.bin_edges[i_E], E_max=self.bin_edges[i_E+1],

@@ -203,9 +203,9 @@ def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=-2):
             l -= 360
         interpolated = 0.
     else:
-        idx = np.where(l > 180)[0]
-        l[idx] -= 360.
+        l[l > 180] -= 360.
         interpolated = np.zeros(l.shape[0])
+
 
     # average_E = 10**(0.5*(np.log10(E_min)+np.log10(E_max)))
     # Weight against the spectrum.
@@ -213,7 +213,7 @@ def GetExpMap(E_min, E_max, l, b, expcube, subsamples=5, spectral_index=-2):
     weights = E_list**-spectral_index
 
     for i, E in enumerate(E_list):
-        interpolated += rgi((np.log10(E), b, l))*(weights[i]/np.sum(weights))
+        interpolated += rgi((np.log10(E), b, l))*(weights[i]/np.sum(weights))        
     #interpolated = np.average(rgi((np.log10(E_list), b, l)), weights=weights, axis=0)
 
     return interpolated
