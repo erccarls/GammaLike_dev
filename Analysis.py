@@ -172,12 +172,35 @@ class Analysis():
         mask[idx] = 1.  # Set unmasked elements to 1
         
         if merge is True:
-            #masked_idx = np.where(mask == 0)[0]
             self.mask = (self.mask.astype(np.int32) | mask.astype(np.int32))
-
-            #self.mask[masked_idx] = 0
         else: 
             self.mask = mask
+        return mask
+
+
+    def GenRadialMask(self, r1, r2, plane_mask=2, merge=False):
+        '''
+        Generate an annular mask with a plane cut out.
+
+        :params r1: Inner radius in deg
+        :params r2: Outer radius in deg
+        :params plane_mask: Mask plus-minus "plane_mask" degrees in latitude
+        :param  merge: False will replace the current Analysis.mask.  In case one wants to combine multiple masks,
+                    merge=True will apply the or operation between the exisiting and new mask
+        :returns  mask: mask healpix array of dimension nside:
+        '''
+
+        pixels = np.arange(12*self.nside**2)
+        l, b = Tools.hpix2ang(pixels, nside=self.nside) # Find l,b of each pixel
+        r = Tools.Dist(0, l, 0, b)  # Find distance from origin
+        mask = np.zeros(pixels.shape)
+        mask[(r>r1) & (r<r2) & (np.abs(b)>plane_mask)] = 1 # Unmask the annulus
+
+        if merge is True:
+            self.mask = (self.mask.astype(np.int32) | mask.astype(np.int32))
+        else:
+            self.mask = mask
+
         return mask
 
     # def AddPointSourceTemplateFermi(self, pscmap='gtsrcmap_All_Sources.fits', name='PSC',
