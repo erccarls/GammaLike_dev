@@ -5,95 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="106cb39c-4895-4b73-a64c-c5a1bad85918" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/GenData-half_degree_hyades.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Plot Results/Scan Gamma F.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Plot Results/Scan Localize E.ipynb" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/.name" afterPath="$PROJECT_DIR$/.idea/.name" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/3FGL Extended .ipynb" afterPath="$PROJECT_DIR$/3FGL Extended .ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/AddGalpropComponent.ipynb" afterPath="$PROJECT_DIR$/AddGalpropComponent.ipynb" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Analysis.py" afterPath="$PROJECT_DIR$/Analysis.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Analyze Fermi Diffuse.ipynb" afterPath="$PROJECT_DIR$/Analyze Fermi Diffuse.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/Binning-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/Binning-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Binning.ipynb" afterPath="$PROJECT_DIR$/Binning.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Compare Chi^2.ipynb" afterPath="$PROJECT_DIR$/Compare Chi^2.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/Compare Gas Distributions-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/Compare Gas Distributions-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Compare Gas Distributions.ipynb" afterPath="$PROJECT_DIR$/Compare Gas Distributions.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DM.py" afterPath="$PROJECT_DIR$/DM.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Ensemble Plots  G.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Ensemble Plots  G.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Ensemble Plots B.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Ensemble Plots B.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Ensemble Plots D.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Ensemble Plots D.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Ensemble Plots E - XCO.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Ensemble Plots E - XCO.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Ensemble Plots E.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Ensemble Plots E.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Ensemble Plots.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Ensemble Plots.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/FermiBubbles.ipynb" afterPath="$PROJECT_DIR$/FermiBubbles.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Fit X_CO and ICS.ipynb" afterPath="$PROJECT_DIR$/Fit X_CO and ICS.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GCE - Compare 2FGL-3FGL.ipynb" afterPath="$PROJECT_DIR$/GCE - Compare 2FGL-3FGL.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GCE - Compare Gas Models-paralell run.ipynb" afterPath="$PROJECT_DIR$/GCE - Compare Gas Models-paralell run.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GCE - Compare Gas Models.ipynb" afterPath="$PROJECT_DIR$/GCE - Compare Gas Models.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/GCE_sys.iml" afterPath="$PROJECT_DIR$/.idea/GCE_sys.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GammaLikelihood.py" afterPath="$PROJECT_DIR$/GammaLikelihood.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GenData-half_degree_hyades-Copy.ipynb" afterPath="$PROJECT_DIR$/GenData-half_degree_hyades-Copy.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GenData.ipynb" afterPath="$PROJECT_DIR$/GenData.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GenDiffuseModel.py" afterPath="$PROJECT_DIR$/GenDiffuseModel.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GenFermiData.py" afterPath="$PROJECT_DIR$/GenFermiData.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/GenSourceMap-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/GenSourceMap-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GenSourceMap.ipynb" afterPath="$PROJECT_DIR$/GenSourceMap.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/GenSrcMap-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/GenSrcMap-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/GenSrcMap.ipynb" afterPath="$PROJECT_DIR$/GenSrcMap.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HDF5 Tests.ipynb" afterPath="$PROJECT_DIR$/HDF5 Tests.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Healpix Compare .ipynb" afterPath="$PROJECT_DIR$/Healpix Compare .ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Healpix2Mapcube.py" afterPath="$PROJECT_DIR$/Healpix2Mapcube.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/Junk-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/Junk-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Junk.ipynb" afterPath="$PROJECT_DIR$/Junk.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/PPPC4DM.ipynb" afterPath="$PROJECT_DIR$/PPPC4DM.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Pohl H2.ipynb" afterPath="$PROJECT_DIR$/Pohl H2.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Pohl HI.ipynb" afterPath="$PROJECT_DIR$/Pohl HI.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Reduce Num Rings.ipynb" afterPath="$PROJECT_DIR$/Reduce Num Rings.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/RunGalprop-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/RunGalprop-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/RunGalprop.ipynb" afterPath="$PROJECT_DIR$/RunGalprop.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/RunGalprop.py" afterPath="$PROJECT_DIR$/RunGalprop.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SampleCartesian.ipynb" afterPath="$PROJECT_DIR$/SampleCartesian.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Axes Ratio D.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Axes Ratio D.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Axes Ratio E.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Axes Ratio E.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Axes Ratio F.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Axes Ratio F.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Gamma D.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Gamma D.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Gamma E.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Gamma E.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Longitude-D.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Longitude-D.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Longitude-E.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Longitude-E.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Longitude-F.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Longitude-F.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Plot Results/Scan Longitude.ipynb" afterPath="$PROJECT_DIR$/Plot Results/Scan Longitude.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SourceMap.py" afterPath="$PROJECT_DIR$/SourceMap.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Tavaloli HI.ipynb" afterPath="$PROJECT_DIR$/Tavaloli HI.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Template.py" afterPath="$PROJECT_DIR$/Template.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Test Analysis HDF5.ipynb" afterPath="$PROJECT_DIR$/Test Analysis HDF5.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Test Analysis-3D.ipynb" afterPath="$PROJECT_DIR$/Test Analysis-3D.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Test Analysis.ipynb" afterPath="$PROJECT_DIR$/Test Analysis.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Test Diffusion.ipynb" afterPath="$PROJECT_DIR$/Test Diffusion.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/TestSpiralArms.ipynb" afterPath="$PROJECT_DIR$/TestSpiralArms.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/Tools-checkpoint.ipynb" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/Tools-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Tools.ipynb" afterPath="$PROJECT_DIR$/Tools.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Tools.py" afterPath="$PROJECT_DIR$/Tools.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Untitled.ipynb" afterPath="$PROJECT_DIR$/Untitled.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Untitled1.ipynb" afterPath="$PROJECT_DIR$/Untitled1.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Validate Galprop Gas Maps.ipynb" afterPath="$PROJECT_DIR$/Validate Galprop Gas Maps.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/conf.py" afterPath="$PROJECT_DIR$/conf.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/convert_gas_cube_galprop.ipynb" afterPath="$PROJECT_DIR$/convert_gas_cube_galprop.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/encodings.xml" afterPath="$PROJECT_DIR$/.idea/encodings.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hdf5 to cartesian.ipynb" afterPath="$PROJECT_DIR$/hdf5 to cartesian.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/iso_clean_v05.txt" afterPath="$PROJECT_DIR$/iso_clean_v05.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/remove_output.py" afterPath="$PROJECT_DIR$/remove_output.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/scopes/scope_settings.xml" afterPath="$PROJECT_DIR$/.idea/scopes/scope_settings.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test.ipynb" afterPath="$PROJECT_DIR$/test.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/theano_test.ipynb" afterPath="$PROJECT_DIR$/theano_test.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tmp.py" afterPath="$PROJECT_DIR$/tmp.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tmp2.py" afterPath="$PROJECT_DIR$/tmp2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tmpSources.xml" afterPath="$PROJECT_DIR$/tmpSources.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="GCE_sys.iws" />
@@ -169,8 +82,8 @@
       <file leaf-file-name="Analysis.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Analysis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.56983805" vertical-offset="2803" max-vertical-offset="23310">
-              <caret line="187" column="91" selection-start-line="187" selection-start-column="91" selection-end-line="187" selection-end-column="91" />
+            <state vertical-scroll-proportion="0.64271253" vertical-offset="2803" max-vertical-offset="23310">
+              <caret line="191" column="0" selection-start-line="191" selection-start-column="0" selection-end-line="191" selection-end-column="0" />
               <folding>
                 <element signature="e#289#307#0" expanded="true" />
               </folding>
@@ -625,7 +538,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="27" width="1920" height="1173" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -1129,8 +1042,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Analysis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.56983805" vertical-offset="2803" max-vertical-offset="23310">
-          <caret line="187" column="91" selection-start-line="187" selection-start-column="91" selection-end-line="187" selection-end-column="91" />
+        <state vertical-scroll-proportion="0.64271253" vertical-offset="2803" max-vertical-offset="23310">
+          <caret line="191" column="0" selection-start-line="191" selection-start-column="0" selection-end-line="191" selection-end-column="0" />
           <folding>
             <element signature="e#289#307#0" expanded="true" />
           </folding>

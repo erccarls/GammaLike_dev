@@ -620,7 +620,7 @@ class Analysis():
 
 
 
-    def AddFermiDiffuseModel(self, diffuse_path, infile=None, outfile=None, multiplier=1.):
+    def AddFermiDiffuseModel(self, diffuse_path, infile=None, outfile=None, multiplier=1., fixSpectrum=False):
         """
         Adds a fermi diffuse model to the template.  Input map is a fits file containing a cartesian mapcube.
         This gets resampled into a healpix cube, integrated over energy,
@@ -643,7 +643,7 @@ class Analysis():
                                                           nside=self.nside)
                 print '\rRemapping Fermi Diffuse Model to Healpix Grid %.2f' % ((float(i+1)/self.n_bins)*100.), "%",
 
-            self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
+            self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=fixSpectrum, fixNorm=False,
                              value=1., ApplyIRF=True, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
 
             if outfile is not None:
@@ -651,7 +651,7 @@ class Analysis():
 
         else:
             healpixcube = np.load(infile)
-            self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=True, fixNorm=False,
+            self.AddTemplate(name='FermiDiffuse', healpixCube=healpixcube, fixSpectrum=fixSpectrum, fixNorm=False,
                              value=1., ApplyIRF=False, sourceClass='GEN', limits=[None, None], multiplier=multiplier)
 
     def AddGalpropTemplate(self, basedir='/data/fermi_diffuse_models/galprop.stanford.edu/PaperIISuppMaterial/OUTPUT',
