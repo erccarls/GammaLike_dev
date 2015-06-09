@@ -178,15 +178,19 @@ class Analysis():
         return mask
 
 
-    def GenRadialMask(self, r1, r2, plane_mask=2, merge=False):
+    def GenRadialMask(self, r1, r2, plane_mask=2, merge=False, start_angle=0., stop_angle=360.):
         '''
         Generate an annular mask with a plane cut out.
 
         :params r1: Inner radius in deg
         :params r2: Outer radius in deg
         :params plane_mask: Mask plus-minus "plane_mask" degrees in latitude
-        :param  merge: False will replace the current Analysis.mask.  In case one wants to combine multiple masks,
+        :params merge: False will replace the current Analysis.mask.  In case one wants to combine multiple masks,
                     merge=True will apply the or operation between the exisiting and new mask
+        :params start_angle: Stop and start angle must be specified in order to cut out an angular wedge beginning
+                    from 0=+lon, 90=+lat, and 180=-lon. Start angle can be > stop angle to go through theta=0 
+        :params stop_angle: Stop and start angle must be specified in order to cut out an angular wedge beginning
+                    from 0=+lon, 90=+lat, and 180=-lon.  Start angle can be > stop angle to go through theta=0 
         :returns  mask: mask healpix array of dimension nside:
         '''
 
@@ -194,7 +198,22 @@ class Analysis():
         l, b = Tools.hpix2ang(pixels, nside=self.nside) # Find l,b of each pixel
         r = Tools.Dist(0, l, 0, b)  # Find distance from origin
         mask = np.zeros(pixels.shape)
-        mask[(r>r1) & (r<r2) & (np.abs(b)>plane_mask)] = 1 # Unmask the annulus
+        l[l>180] -= 360
+        
+        angle_of_pixel = np.rad2deg(np.arctan2(-b,-l))        
+        
+        if stop_angle < 0: 
+            stop_angle+=360
+        
+        if start_angle < 0: 
+            start_angle+=360
+        
+        if stop_angle<start_angle: 
+            mask[(r>r1) & (r<r2) & (np.abs(b)>plane_mask) & (start_angle <= (angle_of_pixel+180)) & ( (angle_of_pixel+180) <= 360)] = 1 # Unmask the annulus
+            mask[(r>r1) & (r<r2) & (np.abs(b)>plane_mask) & (0 <= (angle_of_pixel+180)) & ( (angle_of_pixel+180) <= stop_angle)] = 1 # Unmask the annulus
+                                                                                                     
+        else:
+            mask[(r>r1) & (r<r2) & (np.abs(b)>plane_mask) & (start_angle <= (angle_of_pixel+180)) & ( (angle_of_pixel+180) <= stop_angle)] = 1 # Unmask the annulus
 
         if merge is True:
             self.mask = (self.mask.astype(np.int32) | mask.astype(np.int32))
