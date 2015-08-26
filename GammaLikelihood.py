@@ -278,7 +278,7 @@ class like():
     m.tol = tol  # TODO: why does m.tol need to be so big to converge when errors are very small????
     #m.migrad(ncall=200000, precision=1e-15)
     if not start_fresh:
-        m.migrad(ncall=1e6)#, precision=precision)
+        m.migrad(ncall=1e4,)#, precision=precision)
 
     #m.minos(maxcall=10000,sigma=2.)
 
@@ -545,7 +545,7 @@ class like():
     # Init migrad
     m = Minuit(like.f, **kwargs)
     m.tol = tol  # TODO: why does m.tol need to be so big to converge when errors are very small????
-    m.migrad(ncall=5e4)#, precision=precision)
+    m.migrad(ncall=2500)#, precision=precision)
 
     #m.minos(maxcall=10000,sigma=2.)
 

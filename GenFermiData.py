@@ -2,8 +2,8 @@ import os
 import numpy as np
 
 def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3, convtype=-1,  zmax=100, emin=200,
-                 emax=6e5,
-                 irf='P7REP_CLEAN_V15', filter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52"):
+                 emax=6e5,irf='P7REP_CLEAN_V15', filter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52",
+                 evtype='INDEF'):
     '''
     Given a set of input params, this calls the fermi tools to generate the necessary files for
     diffuse likelihood analysis.
@@ -39,6 +39,7 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
 
 
     runstring = '''
+    #/bin/sh 
     cd '''+ basepath + '''
 
     echo "Get a beer. This will take a while..."
@@ -47,7 +48,8 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
     gtselect '''+str(phfile)+''' photons_merged_'''+str(tag)+'''.fits\
         ra=INDEF dec=INDEF rad=INDEF tmin=INDEF tmax=INDEF\
         zmax='''+str(zmax)+''' emin='''+str(emin)+''' emax='''+str(emax)+'''\
-        convtype='''+str(convtype)+''' evclass='''+str(evclass)+''' clobber=True
+        convtype='''+str(convtype)+''' evclass='''+str(evclass)+''' clobber=True\
+        evtype='''+str(evtype)+'''
 
     echo "running gtmktime"
     gtmktime scfile='''+str(scfile)+''' filter="'''+filter + '''"\
@@ -69,7 +71,7 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
     # make psf file
     echo "running gtpsf"
     gtpsf expcube="cube_'''+str(tag)+'''.fits" outfile=gtpsf_'''+str(tag)+'''.fits irfs='''+str(irf)+''' \
-    emin=20 emax=1e6 nenergies=50 clobber=True ra=0 dec=0 thetamax=10 ntheta=200
+    emin=20 emax=1e6 nenergies=50 clobber=True ra=0 dec=0 thetamax=10 ntheta=200 '''+ str(evtype) + '''
 
     echo "running gtbin"
     gtbin evfile=photons_merged_cut_'''+str(tag)+'''.fits \
@@ -80,7 +82,7 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
     echo "running gtexpcube2"
     gtexpcube2 infile="cube_'''+str(tag)+'''.fits" cmap="gtbin_'''+str(tag)+'''.fits"\
         coordsys=GAL outfile="gtexpcube2_'''+str(tag)+'''.fits"\
-        irf='''+str(irf)+''' ebinfile=ebins_'''+str(tag)+'''.fits ebinalg=FILE clobber=True'''
+        irf='''+str(irf)+''' ebinfile=ebins_'''+str(tag)+'''.fits ebinalg=FILE clobber=True proj=CAR evtype='''+ str(evtype) 
 
     f = open(basepath + scriptname, 'wb')
     f.write(runstring)
@@ -102,4 +104,3 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
 #                   scriptname='genFermiData.sh', bin_edges=bins,
 #                   phfile='/data/fermi_data_1-8-14/phfile.txt',
 #                   scfile='/data/fermi_data_1-8-14/lat_spacecraft_merged.fits')
-

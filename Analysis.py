@@ -35,7 +35,7 @@ class Analysis():
                     phfile_raw='/data/fermi_data_1-8-14/phfile.txt',
                     scfile='/data/fermi_data_1-8-14/lat_spacecraft_merged.fits',
                     evclass=2, convtype=-1,  zmax=100, irf='P7REP_CLEAN_V15', fglpath='/data/gll_psc_v14.fit',
-                    gtfilter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52", templateDir='/data/Extended_archive_v15/Templates/'):
+                    gtfilter="DATA_QUAL>0 && LAT_CONFIG==1 && ABS(ROCK_ANGLE)<52", templateDir='/data/Extended_archive_v15/Templates/',evtype='INDEF',):
         """
         :param    E_min:        Min energy for recursive spectral binning
         :param    E_max:        Max energy for recursive spectral binning
@@ -48,6 +48,7 @@ class Analysis():
         :param    phfile_raw:   Photon file or list of files from fermitools (evfile you would input to gtselect)
         :param    scfile:       Merged spacecraft file
         :param    evclass:      Fermi event class (integer)
+        :param    evtype:       Fermi event type subselection.  Default is INDEF which applies no subselection
         :param    convtype:     Fermi conversion type (integer)
         :param    zmax:         zenith cut
         :param    irf:          Fermi irf name
@@ -66,6 +67,7 @@ class Analysis():
         self.basepath = basepath
         self.scfile = scfile
         self.evclass = evclass
+        self.evtype = evtype
         self.convtype = convtype
         self.zmax = zmax
         self.irf = irf
@@ -78,11 +80,11 @@ class Analysis():
         self.expCube = basepath + '/gtexpcube2_' + str(tag)+'.fits'
         self.fglpath = fglpath
         self.templateDir = templateDir + '/'
-        
-        # Currently Unassigned 
+
+        # Currently Unassigned
         self.binned_data = None  # master list of bin counts. 1st index is spectral, 2nd is pixel_number
-        self.mask = None         # Mask. 0 is not analyzed. between 0-1 corresponds to weights. 
-        self.templateList = {}   # Dict of analysis templates 
+        self.mask = None         # Mask. 0 is not analyzed. between 0-1 corresponds to weights.
+        self.templateList = {}   # Dict of analysis templates
         self.fitted = False      # True if fit has been run with the current templateList.
         self.residual = None     # After a fit, this is automatically updated.
         self.dm_renorm = 1e19    # renormalization constant for DM template
@@ -170,10 +172,10 @@ class Analysis():
                        & (b_pix < b_max) & (b_pix > b_min)
                        & (np.abs(b_pix) > plane_mask))[0]
         mask[idx] = 1.  # Set unmasked elements to 1
-        
+
         if merge is True:
             self.mask = (self.mask.astype(np.int32) | mask.astype(np.int32))
-        else: 
+        else:
             self.mask = mask
         return mask
 
@@ -188,9 +190,9 @@ class Analysis():
         :params merge: False will replace the current Analysis.mask.  In case one wants to combine multiple masks,
                     merge=True will apply the or operation between the exisiting and new mask
         :params start_angle: Stop and start angle must be specified in order to cut out an angular wedge beginning
-                    from 0=+lon, 90=+lat, and 180=-lon. Start angle can be > stop angle to go through theta=0 
+                    from 0=+lon, 90=+lat, and 180=-lon. Start angle can be > stop angle to go through theta=0
         :params stop_angle: Stop and start angle must be specified in order to cut out an angular wedge beginning
-                    from 0=+lon, 90=+lat, and 180=-lon.  Start angle can be > stop angle to go through theta=0 
+                    from 0=+lon, 90=+lat, and 180=-lon.  Start angle can be > stop angle to go through theta=0
         :returns  mask: mask healpix array of dimension nside:
         '''
 
@@ -199,19 +201,19 @@ class Analysis():
         r = Tools.Dist(0, l, 0, b)  # Find distance from origin
         mask = np.zeros(pixels.shape)
         l[l>180] -= 360
-        
-        angle_of_pixel = np.rad2deg(np.arctan2(-b,-l))        
-        
-        if stop_angle < 0: 
+
+        angle_of_pixel = np.rad2deg(np.arctan2(-b,-l))
+
+        if stop_angle < 0:
             stop_angle+=360
-        
-        if start_angle < 0: 
+
+        if start_angle < 0:
             start_angle+=360
-        
-        if stop_angle<start_angle: 
+
+        if stop_angle<start_angle:
             mask[(r>r1) & (r<r2) & (np.abs(b)>plane_mask) & (start_angle <= (angle_of_pixel+180)) & ( (angle_of_pixel+180) <= 360)] = 1 # Unmask the annulus
             mask[(r>r1) & (r<r2) & (np.abs(b)>plane_mask) & (0 <= (angle_of_pixel+180)) & ( (angle_of_pixel+180) <= stop_angle)] = 1 # Unmask the annulus
-                                                                                                     
+
         else:
             mask[(r>r1) & (r<r2) & (np.abs(b)>plane_mask) & (start_angle <= (angle_of_pixel+180)) & ( (angle_of_pixel+180) <= stop_angle)] = 1 # Unmask the annulus
 
@@ -287,12 +289,12 @@ class Analysis():
 
         # Add each source to the template stack
         for i, src_idx in enumerate(fgl_idx):
-            
+
             fixed = False
             if dists[i] > fix_radius:
                 fixed = True
 
-            # If extended... 
+            # If extended...
             if fgl['Source_Name'][src_idx][-1] == 'e':
                 if include_extended:
                     print '\rPopulating ROI with point sources: %i of %i' % (i+1, len(fgl_idx))
@@ -301,12 +303,12 @@ class Analysis():
             elif include_point:
                 print '\rPopulating ROI with point sources: %i of %i' % (i+1, len(fgl_idx)),
                 self.AddFGLSource(src_idx, fixed=fixed)
-        
+
 
 
     def AddExtendedSource(self, idx_fgl, fixed=True, add_template=True):
         """
-        Add a 3FGL extended source to the analysis. 
+        Add a 3FGL extended source to the analysis.
         :param source: the source name ('2FGL_Name' in the extended source table, but 'Source_Name' in the main FGL catalog column.)
         :param template_dir: Path to the directory containing FGL extended source fits templates.
         :param fixed: Fix the source, or let it float.
@@ -316,11 +318,11 @@ class Analysis():
         """
 
         # Open FGL and look up the source name.
-        hdu = pyfits.open(self.fglpath)        
+        hdu = pyfits.open(self.fglpath)
         ext_name = hdu[1].data['Extended_Source_Name'][idx_fgl]
-        ext_idx = np.where(hdu[5].data['Source_Name']==ext_name)[0]        
+        ext_idx = np.where(hdu[5].data['Source_Name']==ext_name)[0]
         fname = hdu[5].data['Spatial_Filename'][ext_idx][0]
-        # Open the file and remove erroneous header info. 
+        # Open the file and remove erroneous header info.
         hdu_spatial = pyfits.open(self.templateDir+fname, mode='readonly')
         try:
             hdu_spatial[0].header.pop('COMMENT')
@@ -330,13 +332,13 @@ class Analysis():
             hdu_spatial[0].header.pop('HISTORY')
         except:
             pass
-        
+
         # Read the WCS coordinates
         w = WCS(hdu_spatial[0].header, relax=False, fix=True)
 
         # Init a blank healpix template
         t = np.zeros(12*self.nside**2, dtype=np.float32)
-        # Map the FGL extended template into healpix space, row by row. 
+        # Map the FGL extended template into healpix space, row by row.
         for i_row in range(hdu_spatial[0].data.shape[0]):
             # get lat/lon for each row
             lon, lat = w.all_pix2world(i_row,np.arange(hdu_spatial[0].data.shape[1]), 0)
@@ -346,22 +348,22 @@ class Analysis():
             hpix_idx = Tools.ang2hpix(lon, lat, nside=self.nside)
             # Add these counts to the healpix template
             np.add.at(t, hpix_idx, hdu_spatial[0].data[i_row, :])
-            
+
         # Get the total number of counts from this source in each energy bin.  This will set the normalization
         total_counts = np.sum(self.GenPointSourceTemplate(pscmap=None, onlyidx=[idx_fgl,],
                                                           save=False, verbosity=0, ignore_ext=False), axis=1)
-        
-        # Generate a master sourcemap for the extended source (spatial template for each energy bin). 
+
+        # Generate a master sourcemap for the extended source (spatial template for each energy bin).
         master_t = np.array([t for i_E, count in enumerate(total_counts)])
         for i_E, count in enumerate(total_counts):
             master_t[i_E] = master_t[i_E]/np.sum(master_t[i_E])*count # normed to the expected PSC flux
-            # Apply the PSF 
+            # Apply the PSF
             master_t[i_E] = Tools.ApplyGaussianPSF(master_t[i_E], E_min=self.bin_edges[i_E], E_max=self.bin_edges[i_E+1], psfFile=self.psfFile, multiplier=1.)
             #master_t[i_E] = Tools.ApplyPSF(master_t[i_E], E_min=self.bin_edges[i_E], E_max=self.bin_edges[i_E+1], PSFFile=self.psfFile, smoothed=False)
         # Don't allow the ALM of the PSF convolution to produce small negative values.
         # This is a count map so 1e-5 is totally negligible. This also cuts out artifacts from PSF convolution.
         master_t = master_t.clip(1e-5, 1e50)
-        # Convert to sparse matrix for memory profile. 
+        # Convert to sparse matrix for memory profile.
         t_sparse = csr_matrix(master_t, dtype=np.float32)
         self.AddTemplate(hdu[5].data['Source_Name'][ext_idx][0].replace(' ', '').replace('-', 'n').replace('+', 'p').replace('.', '_'), t_sparse, fixSpectrum=fixed, fixNorm=fixed,
                          limits=[None, None], value=1., ApplyIRF=False, sourceClass='FGL')
@@ -467,10 +469,10 @@ class Analysis():
 
         self.fitted = False
 
-        # Error Checking on shape of input cube. 
+        # Error Checking on shape of input cube.
         if (healpixCube.shape[0] != (len(self.bin_edges)-1)) or (healpixCube.shape[1] != (12*self.nside**2)):
             raise(Exception("Shape of template does not match binning"))
-        
+
         healpixCube2 = copy.copy(healpixCube)
         if ApplyIRF:
             for i_E in range(len(self.bin_edges)-1):
@@ -483,11 +485,11 @@ class Analysis():
                     healpixCube2[i_E] = Tools.ApplyIRF(healpixCube2[i_E], self.bin_edges[i_E], self.bin_edges[i_E+1],
                                                       self.psfFile, self.expCube, multiplier=multiplier,
                                                       expMap=self.expMap[i_E], noPSF=noPSF)
-                        
+
             # Clip at zero. For delta functions, the PSF convolution from healpix ALM's can produce small negative numbers.
             healpixCube = healpixCube2.clip(0, 1e50)
 
-        # Instantiate the template object. 
+        # Instantiate the template object.
         template = Template.Template(healpixCube2.astype(np.float32), fixSpectrum, fixNorm, limits, value, sourceClass,
                                      valueUnc)
         # Add the instance to the master template list.
@@ -532,7 +534,7 @@ class Analysis():
                 val_unc = 1e20  # if the flux is zero, just make this bin unimportant by setting the error bars to inf.
             valueUnc.append(val_unc)
 
-        # Add the template to the list. 
+        # Add the template to the list.
         # IRFs are applied during add template.  This multiplies by cm^2 s
         self.AddTemplate(name='Isotropic', healpixCube=healpixCube, fixSpectrum=fixSpectrum,
                          fixNorm=fixNorm, limits=[None, None], value=1, ApplyIRF=True, sourceClass='ISO', valueUnc=valueUnc)
@@ -621,7 +623,7 @@ class Analysis():
 
         GenFermiData.GenDataScipt(self.tag, self.basepath, self.bin_edges, scriptname, self.phfile_raw,
                                   self.scfile, self.evclass, self.convtype,  self.zmax, min(self.bin_edges),
-                                  max(self.bin_edges), self.irf, self.gtfilter)
+                                  max(self.bin_edges), self.irf, self.gtfilter, self.evtype)
         if runscript:
             import sys
             import subprocess
@@ -700,7 +702,7 @@ class Analysis():
         energies = pyfits.open(basedir+'/bremss_healpix_54_'+tag+'.gz')[2].data.field(0)
 
         # For some reason, older versions of galprop files have slightly different data structures.  This try/except
-        # will detect the right one to use. 
+        # will detect the right one to use.
         comps, comps_new = {}, {}
         try:
             comps['ics'] = pyfits.open(basedir+'/ics_isotropic_healpix_54_'+tag+'.gz')[1].data.field(0).T
@@ -981,7 +983,9 @@ class Analysis():
 
                 if minosList[i_E] is None:
                     if hesseList[i_E] is None:
-                        t.valueError.append(np.array((0., 0.)))
+                        if type(t.valueError) == type(0.):
+                            t.valueError = []
+                        t.valueError.append(np.array((1e10, 1e10)))
                         continue
                     for h in hesseList[i_E]:
                         name = "_".join(h['name'].split('_')[:-1])
@@ -1085,11 +1089,11 @@ class Analysis():
                 #stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value)
                 #              / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
                 stat_error = 0 # Now that we are using iMinuit minos etc.. instead of just poisson errors.
-                
+
                 if t.sourceClass == 'FGL':
                     count = np.average(t.healpixCube.toarray()[i_E][mask_idx]/eff_area)*t.value
                 else:
-                    
+
                     count = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.value
                 # No fit errors on data.
                 if name is not 'Data' and t.fixNorm is False:
@@ -1105,11 +1109,11 @@ class Analysis():
 
             # if value is a vector
             elif np.ndim(t.value) == 1 and len(t.value) == self.n_bins:
-                
+
                 #stat_error = (np.sqrt(np.sum(t.healpixCube[i_E][mask_idx])*t.value[i_E])
                 #              / np.average(eff_area)/len(mask_idx))  # also divide by num pixels.
                 stat_error = 0 # Now that we are using iMinuit minos etc.. instead of just poisson errors.
-                
+
                 if name is not 'Data':
 
                         try:
@@ -1117,7 +1121,7 @@ class Analysis():
                                 fit_error = np.average(t.healpixCube.toarray()[i_E][mask_idx]/eff_area)*t.valueError[i_E]
                             else:
                                 fit_error = np.average(t.healpixCube[i_E][mask_idx]/eff_area)*t.valueError[i_E]
-                                
+
                         except:
                             fit_error = 0
                 if t.fixNorm:
@@ -1138,7 +1142,7 @@ class Analysis():
                 if np.ndim(fit_error) == 1:
                     errors.append((np.sqrt(np.array(stat_error)**2+np.array(fit_error[0])**2),
                                             np.sqrt(np.array(stat_error)**2+np.array(fit_error[1])**2)))
-                    
+
         return self.central_energies, np.array(flux), np.array(errors)
 
 
@@ -1302,7 +1306,3 @@ class Analysis():
                 t.limits = limits
                 # t.value = 1.
                 # t.valueError = .1
-
-
-
-
