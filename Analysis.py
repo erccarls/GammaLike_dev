@@ -168,9 +168,9 @@ class Analysis():
         # Find elements that are masked
         l_pix[l_pix>180.] = l_pix[l_pix>180.]-360.
 	
-	# Don't exclude the b=0 pixels
-	if plane_mask = 0:
-		plane_mask -= 1 
+	    # Don't exclude the b=0 pixels
+    	if plane_mask == 0:
+    		plane_mask -= 1 
 
         idx = np.where(((l_pix < l_max) & (l_pix > l_min))
                        & (b_pix < b_max) & (b_pix > b_min)
