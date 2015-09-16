@@ -167,6 +167,10 @@ class Analysis():
         l_pix, b_pix = Tools.hpix2ang(hpix=np.arange(12*self.nside**2), nside=self.nside)
         # Find elements that are masked
         l_pix[l_pix>180.] = l_pix[l_pix>180.]-360.
+	
+	# Don't exclude the b=0 pixels
+	if plane_mask = 0:
+		plane_mask -= 1 
 
         idx = np.where(((l_pix < l_max) & (l_pix > l_min))
                        & (b_pix < b_max) & (b_pix > b_min)
@@ -177,6 +181,54 @@ class Analysis():
             self.mask = (self.mask.astype(np.int32) | mask.astype(np.int32))
         else:
             self.mask = mask
+        return mask
+
+
+
+    def CaloreRegion(self, region):
+        '''
+        Returns a mask corresponding to Calore et al (1409.0042  figure 15 regions)
+        
+        :params region: Integer region index from 1 to 10
+        :params l: Longitude vector of pixels between -180,180
+        :params b: Latitude vector of pixels between -90,90
+        '''
+        
+        pixels = np.arange(12*self.nside**2)
+        l, b = Tools.hpix2ang(pixels, nside=self.nside) # Find l,b of each pixel
+        mask = np.zeros(pixels.shape)
+        l[l>180] -= 360
+        
+        if region==1:
+            idx = (np.sqrt(l**2+b**2)<5) & (b>2)
+        elif region==2:
+            idx = (np.sqrt(l**2+b**2)<5) & (-b>2)
+        
+        elif region==3:
+            idx = (5<np.sqrt(l**2+b**2)) & (b>np.abs(l)) & (np.sqrt(l**2+b**2)<10) 
+        elif region==4:
+            idx = (5<np.sqrt(l**2+b**2)) & (-b>np.abs(l)) & (np.sqrt(l**2+b**2)<10) 
+        
+        elif region==5:
+            idx = (10<np.sqrt(l**2+b**2)) & (b>np.abs(l)) & (np.sqrt(l**2+b**2)<15) 
+        elif region==6:
+            idx = (10<np.sqrt(l**2+b**2)) & (-b>np.abs(l)) & (np.sqrt(l**2+b**2)<15) 
+        
+        elif region==7:
+            idx = (5<np.sqrt(l**2+b**2)) & (l>np.abs(b)) & (np.sqrt(l**2+b**2)<15)
+        elif region==8:
+            idx = (5<np.sqrt(l**2+b**2)) & (-l>np.abs(b)) & (np.sqrt(l**2+b**2)<15) 
+        
+        elif region==9:
+            idx = (15<np.sqrt(l**2+b**2)) & (np.sqrt(l**2+b**2)<20)
+        
+        elif region==10:
+            idx =  np.sqrt(l**2+b**2)>20 
+        else: 
+            raise('Invalud Calore region. Must be int in 1...10')
+        
+        mask = (idx & (np.abs(l)<20) & (np.abs(b)<20) & (np.abs(b)>2))
+        
         return mask
 
 
@@ -568,7 +620,12 @@ class Analysis():
 
         # Just get an idea of the typical exposure aoround 1 GeV so we can prescale the fitting inputs
         exposure = Tools.GetExpMap(E_min=1e3, E_max=1e3, l=0., b=0., expcube=self.expCube, subsamples=1)
-        self.dm_renorm = 10./exposure/np.max(tmp)
+
+
+        # renormalize to b=5 degrees
+        hpix_idx = Tools.ang2hpix(l=5.,b=5.,nside=self.nside)
+        self.dm_renorm = 10./exposure/tmp[hpix_idx]*3.970529e-03
+
         tmp *= self.dm_renorm
         # Get as close as possible with start values.
 
@@ -587,7 +644,7 @@ class Analysis():
                                  1.36724396e+01,   1.55134638e+01,   1.15991307e+01,
                                  1.01560749e+01,   8.78687207e+00,   6.67325932e+00,
                                  3.29639464e+00,   3.26640905e+00,   1.13648053e+00,
-                                 9.12566623e-01,   3.62550033e-01,   1.69769179e-03])
+                                 9.12566623e-01,   3.62550033e-01,   1.69769179e-03])*np.array([120.50832071218372, 0.50544260402220376, 0.50269215354447727, 2.1982291034590968, 3.1800375465552153, 0.41759734422687789, 0.35581511608133187, 0.53834125119502851, 0.41882282691705752, 0.49581986277255824, 0.59661337163712325, 0.61080739355640457, 0.7443144976742635, 0.69448242983174446, 0.81671518607132365, 0.97517355786381898, 1.1233995847324556, 1.2384213058382529, 1.7765317070481652, 1.8696432782653931, 2.5742130977666853, 3.4623426965568389, 5.7954405589161926, 537.62256335695929])
 
         startvals = np.interp(self.central_energies, interp_energies, interp_vals)
         healpixcube = np.zeros(shape=(self.n_bins, 12*self.nside**2))
@@ -943,10 +1000,23 @@ class Analysis():
 
             for i_E in range(self.n_bins):
                 if results[i_E].get_fmin().is_valid is False:
-                    print "Warning: Bin", i_E, 'fit did not converge. Trying with lower limit at 0'
-                    self.SetLimits(limits=(0., None), exceptionList=['DM'])
+                    print "Warning: Bin", i_E, 'fit did not converge. Trying with lower limit at -10,10'
+                    
+                    for key, t in self.templateList.items():
+                        t.limits = [0,10]
+                    if key == 'DM':
+                        t.limits = [-10,10]                        
+                    
                     results[i_E] = GammaLikelihood.RunLikelihoodBinByBin(bin=i_E, analysis=self, print_level=print_level,
                                                                          error=error, precision=precision, tol=tol)
+                
+                if results[i_E].get_fmin().is_valid is False:
+                    print "Warning: Bin", i_E, 'fit did not converge. Trying with lower limit at 0,10'
+                    for key, t in self.templateList.items():
+                        t.limits = [0,10]
+                    results[i_E] = GammaLikelihood.RunLikelihoodBinByBin(bin=i_E, analysis=self, print_level=print_level,
+                                                                         error=error, precision=precision, tol=tol)
+
 
 
             # Calculate Fitting Errors.
