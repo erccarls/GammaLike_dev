@@ -13,7 +13,7 @@ import imp
 import copy
 
 def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30, tol=100000.,
-                  precision=1e-14, error=0.1, force_cpu=False):
+                  precision=1e-14, error=0.1, force_cpu=False, statistic='Poisson', clip_model=False):
     """
     Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py).
 
@@ -25,6 +25,8 @@ def RunLikelihood(analysis, print_level=0, use_basinhopping=False, start_fresh=F
     :param tol: EDM Tolerance for migrad convergence.
     :param precision: Migrad internal precision override.
     :param error: Migrad initial param error to use.
+    :param statistic: 'Poisson' is only one supprted now
+    :param clip_model: If true, negative values of the model are converted to a very small number to help convergence.
     :returns (m, res):
             m: iminuit result object\n
             res: scipy.minimize result.  None if use_basinhopping==False
@@ -168,7 +170,7 @@ import time
 import os
 
 class like():
-    def __init__(self, templateList, data, psc_weights, force_cpu):
+    def __init__(self, templateList, data, psc_weights, force_cpu, statistic='Poisson', clip_model=False):
         # Configure Theano 
         # os.environ['THEANO_FLAGS'] = os.environ.get('THEANO_FLAGS', '') + ',openmp=true'
         # os.environ['OMP_NUM_THREADS'] = '12'
@@ -180,6 +182,8 @@ class like():
         self.use_cuda = True
         self.psc_weights = psc_weights
         self.counts = 0
+        self.statistic = statistic
+        self.clip_model = clip_model
         try:
             import cudamat as cm
             self.cm = cm
@@ -209,13 +213,15 @@ class like():
 """ + master_model +"""
 """ + extConstraint + """
 
+        if self.clip_model:
+            model = model.clip(1e-10, 1e50)
         # print 'addition', time.time()-start
 
         #------------------------------------------------
         # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
         if self.use_cuda == False:
             # start = time.time()
-            neg_loglikelihood = np.sum(self.psc_weights*(model-self.data*np.log(model)))
+            # neg_loglikelihood = np.sum(self.psc_weights*(model-self.data*np.log(model)))
             # print 'like_eval_numpy', time.time()-start
 
             # For Theano instead of numpy
@@ -223,7 +229,20 @@ class like():
             # neg_loglikelihood = self.eval(self.data, model, self.psc_weights) 
             # print 'like_eval_theano', time.time()-start
 
-        
+            if self.statistic=='Gaussian':
+                diff = (model-self.data)
+                sigma = np.sqrt(self.data)
+                sigma[sigma==0] = 0.0001
+
+                neg_loglikelihood = -np.sum(self.psc_weights*(
+                                                            np.log(np.sqrt(2*np.pi)*sigma)
+                                                            -(diff*diff)/(2*sigma*sigma)
+                                                            ))
+            else:
+                neg_loglikelihood = np.sum(self.psc_weights*(model-self.data*np.log(model)))
+
+
+
         #------------------------------------------------
         # Uncomment here for GPU mode using CUDA + cudamat libraries
         else:
@@ -271,7 +290,8 @@ class like():
             print "Fallback to CPU mode.  (Failed to import cudamat libraries.)"
 
     start = time.time()
-    like = foo.like(analysis.templateList, masked_data, analysis.psc_weights[:, mask_idx].astype(np.float32), force_cpu)
+    like = foo.like(analysis.templateList, masked_data, analysis.psc_weights[:, mask_idx].astype(np.float32), 
+                    force_cpu, statistic, clip_model)
 
     # Init migrad
     m = Minuit(like.f, **kwargs)
@@ -321,7 +341,8 @@ class like():
 
 
 def RunLikelihoodBinByBin(bin, analysis, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=30,
-                          tol=100000., precision=1e-14, error=0.1, ignoreError=False):
+                          tol=100000., precision=1e-14, error=0.1, ignoreError=False , statistic='Poisson', 
+                          clip_model=False):
     """
     Calculates the maximum likelihood set of parameters given an Analyis object (see analysis.py). Similar to
     RunLikelihood, but runs each energy bin independently (For cases where each Ebin is decoupled in the fit).
@@ -336,6 +357,8 @@ def RunLikelihoodBinByBin(bin, analysis, print_level=0, use_basinhopping=False, 
     :param tol: EDM Tolerance for migrad convergence.
     :param precision: Migrad internal precision override.
     :param error: Migrad initial param error to use.
+    :param statistic: 'Poisson' is only one supprted now. 'Gaussian' does not work correctly yet.
+    :param clip_model: If true, negative values of the model are converted to a very small number to help convergence.
     :returns m: iminuit result object\n
     """
 
@@ -445,11 +468,13 @@ import numpy as np
 import time
 
 class like():
-    def __init__(self, templateList, data, psc_weights):
+    def __init__(self, templateList, data, psc_weights, statistic='Poisson', clip_model=False):
         self.templateList = templateList
         self.data = data
         self.use_cuda = True
         self.psc_weights = psc_weights
+        self.statistic = statistic
+        self.clip_model = clip_model
         try:
             import cudamat as cm
             self.cm = cm
@@ -465,6 +490,10 @@ class like():
         # init model array
         #model = np.zeros(shape=(1, self.templateList[self.templateList.keys()[0]].healpixCubeMasked.shape[1]))
         model = np.zeros(shape=self.data.shape)
+
+        if self.clip_model:
+            model = model.clip(1e-10,1e50)
+
         # sum the models
 """ + model +"""
 """ + extConstraint + """
@@ -473,8 +502,20 @@ class like():
         # Uncomment this for CPU mode (~10 times slower than GPU depending on array size)
         self.use_cuda=False
         if self.use_cuda == False:
+            if self.statistic=='Gaussian':
+                diff = (model-self.data)
+                sigma = np.sqrt(self.data)
+                sigma[sigma==0] = 0.0001
 
-            neg_loglikelihood = np.sum(self.psc_weights*(model-self.data*np.log(model)))
+                neg_loglikelihood = -np.sum(self.psc_weights*(
+                                                            np.log(np.sqrt(2*np.pi)*sigma)
+                                                            -(diff*diff)/(2*sigma*sigma)
+                                                            ))
+            else:
+                neg_loglikelihood = np.sum(self.psc_weights*(model-self.data*np.log(model)))
+
+
+
 
         #------------------------------------------------
         # Uncomment here for GPU mode using CUDA + cudamat libraries
@@ -527,7 +568,8 @@ class like():
     #                 np.array([analysis.psc_weights[bin, mask_idx].astype(np.float32), ]))
     like = foo.like(templateList,
                     np.array(masked_data[bin]),
-                    np.array(analysis.psc_weights[bin, mask_idx].astype(np.float32)))
+                    np.array(analysis.psc_weights[bin, mask_idx].astype(np.float32)),
+                    statistic, clip_model)
 
 
     # print analysis.templateList['DM'].healpixCube[0].shape

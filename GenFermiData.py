@@ -19,9 +19,9 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
     '''
 
     # Perhaps catch a common mistake....
-    if evclass == 2 and 'SOURCE' not in irf:
+    if evclass == 128 and 'SOURCE' not in irf:
         print 'WARNING: Possible mismatch between irf and evclass. Check Carefully.'
-    elif evclass == 3 and 'CLEAN' not in irf:
+    elif evclass == 256 and 'CLEAN' not in irf:
         print 'WARNING: Possible mismatch between irf and evclass. Check Carefully.'
 
 
@@ -70,8 +70,8 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
 
     # make psf file
     echo "running gtpsf"
-    gtpsf expcube="cube_'''+str(tag)+'''.fits" outfile=gtpsf_'''+str(tag)+'''.fits irfs='''+str(irf)+''' \
-    emin=20 emax=1e6 nenergies=50 clobber=True ra=0 dec=0 thetamax=10 ntheta=200 '''+ str(evtype) + '''
+    gtpsf expcube="cube_'''+str(tag)+'''.fits" outfile=gtpsf_'''+str(tag)+'''.fits irfs='''+str(irf).split('::')[0]+''' \
+    emin=20 emax=1e6 nenergies=50 clobber=True ra=0 dec=0 thetamax=10 ntheta=200 evtype='''+str(evtype)+'''
 
     echo "running gtbin"
     gtbin evfile=photons_merged_cut_'''+str(tag)+'''.fits \
@@ -82,7 +82,7 @@ def GenDataScipt(tag, basepath, bin_edges, scriptname, phfile, scfile, evclass=3
     echo "running gtexpcube2"
     gtexpcube2 infile="cube_'''+str(tag)+'''.fits" cmap="gtbin_'''+str(tag)+'''.fits"\
         coordsys=GAL outfile="gtexpcube2_'''+str(tag)+'''.fits"\
-        irf='''+str(irf)+''' ebinfile=ebins_'''+str(tag)+'''.fits ebinalg=FILE clobber=True proj=CAR evtype='''+ str(evtype) 
+        irf='''+str(irf).split('::')[0]+''' ebinfile=ebins_'''+str(tag)+'''.fits ebinalg=FILE clobber=True proj=CAR evtype='''+str(evtype)
 
     f = open(basepath + scriptname, 'wb')
     f.write(runstring)

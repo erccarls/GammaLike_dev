@@ -22,10 +22,10 @@
 
     # make psf file
     echo "running gtpsf"
-#    gtpsf expcube="cube_P8R2_PSF3_CLEAN_V6_calore.fits" outfile=gtpsf_P8R2_PSF3_CLEAN_V6_calore.fits irfs=P8R2_CLEAN_V6 evtype=32     emin=20 emax=1e6 nenergies=50 clobber=True ra=0 dec=0 thetamax=10 ntheta=200
+    gtpsf expcube="cube_P8R2_PSF3_CLEAN_V6_calore.fits" outfile=gtpsf_P8R2_PSF3_CLEAN_V6_calore.fits irfs=P8R2_CLEAN_V6 evtype=32     emin=20 emax=1e6 nenergies=50 clobber=True ra=0 dec=0 thetamax=10 ntheta=200
 
     echo "running gtbin"
 #    gtbin evfile=photons_merged_cut_P8R2_PSF3_CLEAN_V6_calore.fits         scfile=/data/fermi_data_1-8-14/lat_spacecraft_merged.fits outfile="gtbin_P8R2_PSF3_CLEAN_V6_calore.fits" algorithm=CCUBE nxpix=721 nypix=361        ebinalg=FILE ebinfile=ebins_P8R2_PSF3_CLEAN_V6_calore.fits coordsys=GAL proj=CAR xref=0 yref=0 axisrot=0 binsz=0.5        clobber=True
 
     echo "running gtexpcube2"
-    gtexpcube2 infile="cube_P8R2_PSF3_CLEAN_V6_calore.fits" cmap="gtbin_P8R2_PSF3_CLEAN_V6_calore.fits"        coordsys=GAL outfile="gtexpcube2_P8R2_PSF3_CLEAN_V6_calore.fits"        irf=P8R2_CLEAN_V6 ebinfile=ebins_P8R2_PSF3_CLEAN_V6_calore.fits ebinalg=FILE clobber=True evtype=32 proj=CAR 
+    #gtexpcube2 infile="cube_P8R2_PSF3_CLEAN_V6_calore.fits" cmap="gtbin_P8R2_PSF3_CLEAN_V6_calore.fits"        coordsys=GAL outfile="gtexpcube2_P8R2_PSF3_CLEAN_V6_calore.fits"        irf=P8R2_CLEAN_V6 ebinfile=ebins_P8R2_PSF3_CLEAN_V6_calore.fits ebinalg=FILE clobber=True evtype=32 proj=CAR 

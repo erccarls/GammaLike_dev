@@ -1,1 +1,1 @@
-ipython notebook --profile=nbserver 
+jupyter-notebook
