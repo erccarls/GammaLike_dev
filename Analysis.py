@@ -945,7 +945,7 @@ class Analysis():
 
 
     def RunLikelihood(self, print_level=0, use_basinhopping=False, start_fresh=False, niter_success=50, tol=1e2,
-                      precision=None, error=0.1, minos=True, force_cpu=False, statistic='Poisson'):
+                      precision=None, error=0.1, minos=True, force_cpu=False, statistic='Poisson', clip_model=False):
         """
         Runs the likelihood analysis on the current templateList.
 
@@ -958,7 +958,8 @@ class Analysis():
         :param error: Migrad initial param error to use.
         :param minos: If true, runs minos to determine fitting errors. False uses Hesse method.
         :param statistic: 'Poisson' is only one supprted now. 'Gaussian' does not work correctly yet.
-        :param clip_model: If true, negative values of the model are converted to a very small number to help convergence.
+        :param clip_model: If true, negative values of the model are converted to a very small number to help convergence. 
+                           This *is* unphysical so results should be double checked. 
         
         :returns m, res: m is an iMinuit object and res is a scipy minimization object.
         """
@@ -999,7 +1000,7 @@ class Analysis():
         else:
             results = [GammaLikelihood.RunLikelihoodBinByBin(bin=i, analysis=self, print_level=print_level,
                                                              error=error, precision=precision, tol=tol,
-                                                             statistic=statistic)
+                                                             statistic=statistic, clip_model=clip_model)
                        for i in range(self.n_bins)]
 
 
@@ -1014,15 +1015,15 @@ class Analysis():
                     
                     results[i_E] = GammaLikelihood.RunLikelihoodBinByBin(bin=i_E, analysis=self, print_level=print_level,
                                                                          error=error, precision=precision, tol=tol,
-                                                                         statistic=statistic)
+                                                                         statistic=statistic, clip_model=clip_model)
                 
-                if results[i_E].get_fmin().is_valid is False:
-                    print "Warning: Bin", i_E, 'fit did not converge. Trying with lower limit at 0,10'
-                    for key, t in self.templateList.items():
-                        t.limits = [0,10]
-                    results[i_E] = GammaLikelihood.RunLikelihoodBinByBin(bin=i_E, analysis=self, print_level=print_level,
-                                                                         error=error, precision=precision, tol=tol,
-                                                                         statistic=statistic)
+                # if results[i_E].get_fmin().is_valid is False:
+                #     print "Warning: Bin", i_E, 'fit did not converge. Trying with lower limit at 0,10'
+                #     for key, t in self.templateList.items():
+                #         t.limits = [0,10]
+                #     results[i_E] = GammaLikelihood.RunLikelihoodBinByBin(bin=i_E, analysis=self, print_level=print_level,
+                #                                                          error=error, precision=precision, tol=tol,
+                #                                                          statistic=statistic)
 
 
 

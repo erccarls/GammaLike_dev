@@ -314,7 +314,7 @@ def Analyze(basedir, galprop_tag, A, analysis=0, psf=-1):
         # #--------------------------------------------
         # # Scan longitude offset
         #lons = np.linspace(-90,90,61)
-        lons = np.linspace(-90,90,61)
+        lons = np.linspace(-30,30,21)
         loglike_total, loglike, dm_spec, dm_spec_unc, TS = [], [], [], [], []
         
         for i_l, lon in enumerate(lons):
@@ -329,7 +329,13 @@ def Analyze(basedir, galprop_tag, A, analysis=0, psf=-1):
             # ll_nodm = np.sum(A.loglike)
 
             A.ResetFit()
-            A.AddDMTemplate(profile='NFW', limits=[None,None], decay=False, gamma=1.25, r_s=20.0, axesratio=1, offset=(lon, 0), spec_file=None,)
+            # for key, t in A.templateList.items():
+            #     if key != 'DM':
+            #         t.limits = [0., 5]
+            #     else: 
+            #         t.limits = [-5, 5]
+
+            A.AddDMTemplate(profile='NFW', limits=[None,None], decay=False, gamma=1.25, r_s=20.0, axesratio=1, offset=(lon, 0), spec_file=None)
 
             A.RunLikelihood(print_level=0, tol=2e2, precision=None, minos=False)[0]
 

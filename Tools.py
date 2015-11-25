@@ -234,9 +234,7 @@ def ApplyIRF(hpix, E_min, E_max, psfFile , expCube ,noPSF=False, noExp=False, mu
         :param    multiplier: Sigma = multiplier*FWHM from fermi gtpsf.
         :param    expMap: Can pass in a precomputed healpixcube exposure map to speed things up.
         """
-        # Apply the PSF.  This is automatically spectrally weighted
-        if noPSF is False:
-            hpix = ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=multiplier)
+        
         # Get l,b for each healpix pixel
         l, b = hpix2ang(np.arange(len(hpix)), nside=int(np.sqrt(len(hpix)/12)))
         # For each healpix pixel, multiply by the exposure.
@@ -245,6 +243,11 @@ def ApplyIRF(hpix, E_min, E_max, psfFile , expCube ,noPSF=False, noExp=False, mu
                 hpix *= GetExpMap(E_min, E_max, l, b, expcube=expCube,)
             else:
                 hpix *= expMap
+        
+        # Apply the PSF.  This is automatically spectrally weighted
+        if noPSF is False:
+            hpix = ApplyGaussianPSF(hpix, E_min, E_max, psfFile, multiplier=multiplier)
+
         return hpix
 
 
