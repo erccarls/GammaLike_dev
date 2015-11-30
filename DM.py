@@ -136,7 +136,7 @@ def GenNFW(nside=256, profile='NFW', decay=False, gamma=1, axesratio=1, rotation
     Generates a dark matter annihilation or decay skymap combined with instrumental and point source maps.
 
     :param nside: healpix nside.
-    :param profile: 'NFW', 'Ein', or 'Bur'
+    :param profile: 'NFW', 'Ein', 'Bur', 'Baryonic', or 'Iso'
     :param decay: If false, skymap is for annihilating dark matter
     :param gamma: Inner slope of DM profile for NFW.  Shape parameter for Einasto. Unused for Burk
     :param r_s: Scale factor
@@ -198,6 +198,61 @@ def func(x,y,z):
     return r_s**3/((r+r_s)*(r*r+r_s*r_s))
     '''
 
+    # This is taken from arxiv: 1509.02166
+    Baryonic = '''
+import numpy as np
+
+r_DM, rho_DM = np.array([[  1.47644469e-01,   8.47861095e+00],
+       [  1.83846913e-01,   8.46988620e+00],
+       [  2.23943289e-01,   8.74097384e+00],
+       [  2.78897282e-01,   8.18358051e+00],
+       [  3.39750047e-01,   8.17600109e+00],
+       [  4.42092948e-01,   7.65305885e+00],
+       [  5.75309021e-01,   6.93496863e+00],
+       [  7.48724967e-01,   6.08372093e+00],
+       [  9.74489091e-01,   5.16665429e+00],
+       [  1.26823027e+00,   4.53246216e+00],
+       [  1.54566213e+00,   3.72755260e+00],
+       [  1.92614543e+00,   2.69234062e+00],
+       [  2.29728963e+00,   1.94502708e+00],
+       [  2.73994869e+00,   1.40514552e+00],
+       [  3.26689343e+00,   1.15572793e+00],
+       [  3.98246553e+00,   8.62365176e-01],
+       [  4.64680862e+00,   6.23062442e-01],
+       [  5.42113818e+00,   4.80331717e-01],
+       [  6.32449958e+00,   3.70297650e-01],
+       [  7.37782458e+00,   2.94879996e-01],
+       [  8.60790670e+00,   2.20074812e-01],
+       [  1.02665429e+01,   1.58988601e-01],
+       [  1.27947638e+01,   1.11169985e-01],
+       [  1.49291483e+01,   8.03207787e-02],
+       [  1.78058090e+01,   5.80261237e-02],
+       [  1.98845899e+01,   4.19327503e-02],
+       [  2.37124401e+01,   3.23234960e-02],
+       [  2.76680790e+01,   2.33538609e-02],
+       [  3.15808865e+01,   1.74312459e-02],
+       [  3.85101770e+01,   1.14241888e-02],
+       [  4.59377016e+01,   7.73484638e-03],
+       [  5.60127538e+01,   5.23640586e-03],
+       [  6.68057127e+01,   3.78293561e-03],
+       [  7.79500437e+01,   2.73318678e-03],
+       [  9.29772239e+01,   1.91152639e-03],
+       [  1.08495786e+02,   1.33701412e-03],
+       [  1.23887034e+02,   8.48559721e-04],
+       [  1.57891600e+02,   4.88372579e-04],
+       [  1.96880096e+02,   2.72132354e-04],
+       [  2.34925251e+02,   1.61833282e-04]]).T
+
+rho_DM_interp  = lambda r: np.exp(np.interp(np.log(r), np.log(r_DM), np.log(rho_DM)))
+
+def func(x,y,z):
+    r=np.sqrt(x*x+y*y+z*z)
+    return rho_DM_interp(r)
+
+    '''
+
+
+
     # Normalize Dark matter Profiles to the Solar Position (rho=0.4 GeV/cm^3 for r=8.5kpc )
     if profile == 'NFW':
         func += NFW
@@ -213,6 +268,9 @@ def func(x,y,z):
         func += '''
 func = lambda x,y,z: 1.
 '''
+    elif profile == 'Baryonic':
+        func += Baryonic
+        dm_norm = 0.4 / 0.22540632663301324
     else:
         raise Exception("DM Halo type not supported")
 
