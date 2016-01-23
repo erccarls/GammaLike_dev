@@ -1257,10 +1257,15 @@ class Analysis():
         :param fixSpectrum: If True, the spectrum is not allowed to float.
         """
 
-        # Load the template and spectrum
-        hdu = pyfits.open(template_file)
-        bub_idx = np.where(hdu[1].data['NAME'] == 'Whole bubble')
-        bubble = hdu[1].data['TEMPLATE'][bub_idx][0]
+        try:
+            # Load the template and spectrum
+            hdu = pyfits.open(template_file)
+            bub_idx = np.where(hdu[1].data['NAME'] == 'Whole bubble')
+            bubble = hdu[1].data['TEMPLATE'][bub_idx][0]
+        except: 
+            # The new bubble template
+            hdu = pyfits.open(template_file)
+            bubble = hdu[0].data
 
         # Resize template if need be.
         nside_in = int(np.sqrt(bubble.shape[0]/12))

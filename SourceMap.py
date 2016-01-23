@@ -130,9 +130,19 @@ def GenSourceMap(bin_edges, l_range=(-180, 180), b_range=(-90, 90),
         for i_E in range(len(bin_edges)-1):
             e1, e2 = bin_edges[i_E], bin_edges[i_E+1]
             eb1, eb2 = np.argmin(np.abs(energies-e1)), np.argmin(np.abs(energies-e2))
+            try: 
+                avgPSF = np.average(psfs[eb1:eb2+1], weights=psfWeights[eb1:eb2+1], axis=0)
+                avgPSFInterp = lambda r: np.interp(r, thetas, avgPSF)
 
-            avgPSF = np.average(psfs[eb1:eb2+1], weights=psfWeights[eb1:eb2+1], axis=0)
-            avgPSFInterp = lambda r: np.interp(r, thetas, avgPSF)
+            except:
+                print 
+                print 'Error with PWF weights for source', fgl_data['Source_Name'][idx]
+                print 'This typically just means there is zero emission at the highest energy bins for this source.'
+                print 'This is handled gracefully and should not impact the PSF map.'
+                #print 'psfs', psfs
+                print 'wieghts', psfWeights
+                print 'eb1, eb2', eb1, eb2
+                print 'e1,e2', e1, e2
 
             # Form a cartesian array for this PSF which will be mapped to the healpix grid
             cartMap = np.zeros(shape=(size, size)).astype(np.float32)
